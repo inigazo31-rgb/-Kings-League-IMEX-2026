@@ -1499,12 +1499,10 @@ class Store {
         .eq("id", window.IMEX_CONFIG?.leagueId || "main")
         .maybeSingle();
       if (error) throw error;
-      if (data?.payload) {
-        const remote = this.normalize(data.payload);
-        if (new Date(remote.updatedAt).getTime() > new Date(this.state.updatedAt).getTime()) {
-          this.state = remote;
-        }
-      }
+     if (data?.payload) {
+  const remote = this.normalize(data.payload);
+  this.state = remote;
+}
       this.remoteReady = true;
       this.subscribeRemote();
     } catch (error) {

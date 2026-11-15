@@ -6,10 +6,12 @@ const STORAGE_KEY = "imex.league.v2";
 const SYNC_BASE_KEY = "imex.league.sync-base.v1";
 
 function deepClone(value) {
-  return value === undefined ? undefined : JSON.parse(JSON.stringify(value));
+  if (value === MISSING || value === undefined) return value;
+  return JSON.parse(JSON.stringify(value));
 }
 
 function sameValue(a, b) {
+  if (a === MISSING || b === MISSING) return a === b;
   return JSON.stringify(a) === JSON.stringify(b);
 }
 

@@ -1587,7 +1587,8 @@ class Store {
       this.remoteVersion = Number(data?.version) || 0;
       const remotePayload = data?.payload;
       if (remotePayload && Object.keys(remotePayload).length) {
-        const remote = this.normalize(remotePayload);
+        const remote = this.normalize({ ...remotePayload, accounts: localState.accounts });
+        delete remote._clientId;
         if (this.baseState) {
           const conflicts = [];
           const merged = mergeConcurrent(this.baseState, localState, remote, "", conflicts);
@@ -1638,7 +1639,8 @@ class Store {
         const remotePayload = event.new?.payload;
         const nextVersion = Number(event.new?.version) || 0;
         if (!remotePayload || remotePayload._clientId === this.clientId || nextVersion <= this.remoteVersion) return;
-        const remote = this.normalize(remotePayload);
+        const remote = this.normalize({ ...remotePayload, accounts: this.state.accounts });
+        delete remote._clientId;
 
         if (this.syncStatus === "pending" || this.syncStatus === "saving") {
           const conflicts = [];
@@ -1707,7 +1709,7 @@ class Store {
       const result = Array.isArray(data) ? data[0] : data;
       if (result?.saved) {
         this.remoteVersion = Number(result.version) || this.remoteVersion + 1;
-        this.baseState = this.normalize(payload);
+        this.baseState = this.normalize(local);
         this.syncStatus = "synced";
         this.remoteError = "";
         localStorage.setItem(SYNC_BASE_KEY, JSON.stringify(this.baseState));
@@ -1716,7 +1718,8 @@ class Store {
         return;
       }
 
-      const remote = this.normalize(result?.payload || {});
+      const remote = this.normalize({ ...(result?.payload || {}), accounts: this.state.accounts });
+      delete remote._clientId;
       this.remoteVersion = Number(result?.version) || this.remoteVersion;
       const conflicts = [];
       const merged = this.baseState

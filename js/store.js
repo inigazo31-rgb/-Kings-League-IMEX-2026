@@ -1583,6 +1583,7 @@ class Store {
         .maybeSingle();
       if (error) throw error;
 
+      this.remoteReady = true;
       this.remoteVersion = Number(data?.version) || 0;
       const remotePayload = data?.payload;
       if (remotePayload && Object.keys(remotePayload).length) {

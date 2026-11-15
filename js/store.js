@@ -1642,7 +1642,13 @@ class Store {
         const remote = this.normalize({ ...remotePayload, accounts: this.state.accounts });
         delete remote._clientId;
 
-        if (this.syncStatus === "pending" || this.syncStatus === "saving") {
+        if (this.syncStatus === "conflict") {
+          this.remoteVersion = nextVersion;
+          this.notify();
+          return;
+        }
+
+        if (["pending", "saving", "error"].includes(this.syncStatus)) {
           const conflicts = [];
           const merged = this.baseState
             ? mergeConcurrent(this.baseState, this.state, remote, "", conflicts)

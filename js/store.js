@@ -3,6 +3,77 @@ import { byPoints, uid, safeImage } from "./utils.js";
 import { toast } from "./ui.js";
 
 const STORAGE_KEY = "imex.league.v2";
+const SYNC_BASE_KEY = "imex.league.sync-base.v1";
+
+function deepClone(value) {
+  return value === undefined ? undefined : JSON.parse(JSON.stringify(value));
+}
+
+function sameValue(a, b) {
+  return JSON.stringify(a) === JSON.stringify(b);
+}
+
+function isRecord(value) {
+  return value !== null && typeof value === "object" && !Array.isArray(value);
+}
+
+const MISSING = Symbol("missing");
+
+function mergeConcurrent(base, local, remote, path = "", conflicts = []) {
+  if (sameValue(local, base)) return deepClone(remote);
+  if (sameValue(remote, base)) return deepClone(local);
+  if (sameValue(local, remote)) return deepClone(local);
+
+  if (isRecord(base) && isRecord(local) && isRecord(remote)) {
+    const result = {};
+    const keys = new Set([...Object.keys(base), ...Object.keys(local), ...Object.keys(remote)]);
+    for (const key of keys) {
+      const value = mergeConcurrent(
+        Object.prototype.hasOwnProperty.call(base, key) ? base[key] : MISSING,
+        Object.prototype.hasOwnProperty.call(local, key) ? local[key] : MISSING,
+        Object.prototype.hasOwnProperty.call(remote, key) ? remote[key] : MISSING,
+        path ? `${path}.${key}` : key,
+        conflicts
+      );
+      if (value !== MISSING) result[key] = value;
+    }
+    return result;
+  }
+
+  const idArray = [base, local, remote].every((list) =>
+    Array.isArray(list) && list.every((item) => isRecord(item) && item.id !== undefined)
+  );
+  if (idArray) {
+    const baseMap = new Map(base.map((item) => [item.id, item]));
+    const localMap = new Map(local.map((item) => [item.id, item]));
+    const remoteMap = new Map(remote.map((item) => [item.id, item]));
+    const ids = new Set([...baseMap.keys(), ...localMap.keys(), ...remoteMap.keys()]);
+    const merged = [];
+    for (const id of ids) {
+      const item = mergeConcurrent(
+        baseMap.has(id) ? baseMap.get(id) : MISSING,
+        localMap.has(id) ? localMap.get(id) : MISSING,
+        remoteMap.has(id) ? remoteMap.get(id) : MISSING,
+        `${path}[id=${id}]`,
+        conflicts
+      );
+      if (item !== MISSING) merged.push(item);
+    }
+    return merged;
+  }
+
+  if (base === MISSING) {
+    if (local === MISSING) return deepClone(remote);
+    if (remote === MISSING) return deepClone(local);
+  } else if (local === MISSING || remote === MISSING) {
+    const survivor = local === MISSING ? remote : local;
+    if (sameValue(survivor, base)) return MISSING;
+  }
+
+  conflicts.push(path || "estado");
+  return deepClone(local);
+}
+
 const CONFIG_KEY = "imex.supabase.v1";
 const SUPABASE_TABLE = "app_state";
 const DRAFT_SECONDS = 30;
@@ -114,6 +185,10 @@ class Store {
     this.remoteError = "";
     this.saving = false;
     this.saveTimer = 0;
+    this.remoteVersion = 0;
+    this.baseState = null;
+    this.syncStatus = "offline";
+    this.syncPromise = Promise.resolve();
   }
 
   async init() {
@@ -127,6 +202,8 @@ class Store {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
       if (raw) this.state = this.normalize(JSON.parse(raw));
+      const baseRaw = localStorage.getItem(SYNC_BASE_KEY);
+      if (baseRaw) this.baseState = this.normalize(JSON.parse(baseRaw));
     } catch (error) {
       console.warn("No se pudo leer el estado local:", error);
     }
@@ -222,7 +299,7 @@ class Store {
 
   save(reason = "update") {
     this.state.updatedAt = new Date().toISOString();
-    this.state.version = 1;
+    this.state.version = Number(this.state.version) || 1;
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(this.state));
     } catch (error) {
@@ -1488,26 +1565,64 @@ class Store {
 
   async initSupabase() {
     const config = readConfig();
-    if (!config.url || !config.key || !window.supabase) return;
+    if (!config.url || !config.key || !window.supabase) {
+      this.syncStatus = "offline";
+      return;
+    }
+    const localState = deepClone(this.state);
     try {
       this.supabase = window.supabase.createClient(config.url, config.key, {
         auth: { persistSession: true, autoRefreshToken: true }
       });
       const { data, error } = await this.supabase
         .from(SUPABASE_TABLE)
-        .select("payload, updated_at")
+        .select("payload, updated_at, version")
         .eq("id", window.IMEX_CONFIG?.leagueId || "main")
         .maybeSingle();
       if (error) throw error;
-     if (data?.payload) {
-  const remote = this.normalize(data.payload);
-  this.state = remote;
-}
+
+      this.remoteVersion = Number(data?.version) || 0;
+      const remotePayload = data?.payload;
+      if (remotePayload && Object.keys(remotePayload).length) {
+        const remote = this.normalize(remotePayload);
+        if (this.baseState) {
+          const conflicts = [];
+          const merged = mergeConcurrent(this.baseState, localState, remote, "", conflicts);
+          if (conflicts.length) {
+            this.state = localState;
+            this.syncStatus = "conflict";
+            this.remoteError = `Hay cambios simultáneos que requieren revisión: ${conflicts.slice(0, 4).join(", ")}.`;
+          } else {
+            this.state = this.normalize(merged);
+            this.baseState = deepClone(remote);
+            if (!sameValue(this.state, remote)) this.queueRemoteSave("startup-merge");
+            else this.syncStatus = "synced";
+          }
+        } else if (sameValue(localState, this.normalize(seedState())) || new Date(localState.updatedAt).getTime() <= new Date(remote.updatedAt).getTime()) {
+          this.state = remote;
+          this.baseState = deepClone(remote);
+          this.syncStatus = "synced";
+          localStorage.setItem(SYNC_BASE_KEY, JSON.stringify(remote));
+        } else {
+          this.state = localState;
+          this.baseState = deepClone(remote);
+          this.syncStatus = "conflict";
+          this.remoteError = "Este dispositivo tiene cambios locales sin una versión base verificable. No se sobrescribieron los datos remotos.";
+        }
+      } else {
+        this.baseState = this.normalize(seedState());
+        this.state = localState;
+        this.remoteVersion = Number(data?.version) || 0;
+        this.syncStatus = "pending";
+        this.queueRemoteSave("initial-state");
+      }
+
       this.remoteReady = true;
       this.subscribeRemote();
     } catch (error) {
       this.remoteError = error.message || "No se pudo conectar con Supabase.";
       this.remoteReady = false;
+      this.syncStatus = "error";
       console.warn("Supabase:", this.remoteError);
     }
   }
@@ -1516,35 +1631,110 @@ class Store {
     if (!this.supabase) return;
     this.supabase
       .channel("imex-league-state")
-      .on("postgres_changes", { event: "*", schema: "public", table: SUPABASE_TABLE, filter: `id=eq.${window.IMEX_CONFIG?.leagueId || "main"}` }, (payload) => {
-        const remote = payload.new?.payload;
-        if (!remote || remote._clientId === this.clientId) return;
-        if (new Date(remote.updatedAt).getTime() > new Date(this.state.updatedAt).getTime()) {
-          this.state = this.normalize(remote);
+      .on("postgres_changes", { event: "*", schema: "public", table: SUPABASE_TABLE, filter: `id=eq.${window.IMEX_CONFIG?.leagueId || "main"}` }, (event) => {
+        const remotePayload = event.new?.payload;
+        const nextVersion = Number(event.new?.version) || 0;
+        if (!remotePayload || remotePayload._clientId === this.clientId || nextVersion <= this.remoteVersion) return;
+        const remote = this.normalize(remotePayload);
+
+        if (this.syncStatus === "pending" || this.syncStatus === "saving") {
+          const conflicts = [];
+          const merged = this.baseState
+            ? mergeConcurrent(this.baseState, this.state, remote, "", conflicts)
+            : null;
+          if (!merged || conflicts.length) {
+            this.syncStatus = "conflict";
+            this.remoteError = `Cambios simultáneos en: ${conflicts.slice(0, 4).join(", ") || "estado inicial"}.`;
+            this.remoteVersion = nextVersion;
+            this.notify();
+            return;
+          }
+          this.state = this.normalize(merged);
+          this.baseState = deepClone(remote);
+          this.remoteVersion = nextVersion;
+          this.queueRemoteSave("realtime-merge");
+          this.notify();
+          return;
+        }
+
+        this.state = remote;
+        this.baseState = deepClone(remote);
+        this.remoteVersion = nextVersion;
+        this.syncStatus = "synced";
+        localStorage.setItem(SYNC_BASE_KEY, JSON.stringify(remote));
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(this.state));
+        this.notify();
+      })
+      .subscribe((status) => {
+        if (status === "SUBSCRIBED" && this.remoteReady && this.syncStatus === "offline") {
+          this.syncStatus = "synced";
           this.notify();
         }
-      })
-      .subscribe();
+      });
   }
 
   queueRemoteSave() {
-    if (!this.supabase || !this.remoteReady) return;
+    if (!this.supabase || !this.remoteReady || this.syncStatus === "conflict") return;
     clearTimeout(this.saveTimer);
-    this.saveTimer = setTimeout(() => this.persistRemote(), 450);
+    this.syncStatus = "pending";
+    this.saveTimer = setTimeout(() => {
+      this.syncPromise = this.syncPromise.then(() => this.persistRemote()).catch((error) => {
+        this.remoteError = error.message || "No se pudo sincronizar.";
+        this.syncStatus = "error";
+        this.notify();
+      });
+    }, 450);
   }
 
   async persistRemote() {
-    if (!this.supabase || !this.remoteReady) return;
-    const payload = { ...this.state, accounts: [], _clientId: this.clientId };
-    const { error } = await this.supabase.from(SUPABASE_TABLE).upsert({
-      id: window.IMEX_CONFIG?.leagueId || "main",
-      payload,
-      updated_at: new Date().toISOString()
-    });
-    if (error) {
-      this.remoteError = error.message;
-      console.warn("Supabase save:", error.message);
+    if (!this.supabase || !this.remoteReady || this.syncStatus === "conflict") return;
+    this.syncStatus = "saving";
+    this.notify();
+
+    for (let attempt = 0; attempt < 3; attempt += 1) {
+      const local = this.normalize(deepClone(this.state));
+      const payload = { ...local, accounts: [], _clientId: this.clientId };
+      const { data, error } = await this.supabase.rpc("save_app_state", {
+        p_id: window.IMEX_CONFIG?.leagueId || "main",
+        p_expected_version: this.remoteVersion,
+        p_payload: payload
+      });
+      if (error) throw error;
+
+      const result = Array.isArray(data) ? data[0] : data;
+      if (result?.saved) {
+        this.remoteVersion = Number(result.version) || this.remoteVersion + 1;
+        this.baseState = this.normalize(payload);
+        this.syncStatus = "synced";
+        this.remoteError = "";
+        localStorage.setItem(SYNC_BASE_KEY, JSON.stringify(this.baseState));
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(this.state));
+        this.notify();
+        return;
+      }
+
+      const remote = this.normalize(result?.payload || {});
+      this.remoteVersion = Number(result?.version) || this.remoteVersion;
+      const conflicts = [];
+      const merged = this.baseState
+        ? mergeConcurrent(this.baseState, this.state, remote, "", conflicts)
+        : null;
+      if (!merged || conflicts.length) {
+        this.syncStatus = "conflict";
+        this.remoteError = `No se pudieron combinar automáticamente estos cambios: ${conflicts.slice(0, 5).join(", ") || "estado sin base común"}. Tus cambios locales siguen en este dispositivo; no se sobrescribieron.`;
+        this.notify();
+        return;
+      }
+
+      this.state = this.normalize(merged);
+      this.baseState = deepClone(remote);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(this.state));
+      this.syncStatus = "pending";
     }
+
+    this.syncStatus = "error";
+    this.remoteError = "La liga cambió repetidamente mientras se guardaba. Vuelve a intentar la sincronización.";
+    this.notify();
   }
 
   configureSupabase(url, key) {

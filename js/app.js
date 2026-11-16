@@ -17,6 +17,7 @@ import RulesView from "./views/rules.js";
 import AuthView from "./views/auth.js";
 import AccountView from "./views/account.js";
 import AdminView from "./views/admin.js";
+import RefereeView from "./views/referee.js";
 
 const NAV = [
   ["inicio", "Inicio", "#/"],
@@ -34,6 +35,7 @@ const ROUTES = [
   { re: /^$/, view: HomeView, nav: "inicio", title: "Inicio" },
   { re: /^partidos$/, view: MatchesView, nav: "partidos", title: "Partidos" },
   { re: /^partidos\/([^/]+)$/, view: MatchesView, nav: "partidos", title: "Partido", keys: ["id"] },
+  { re: /^arbitraje\/([^/]+)$/, view: RefereeView, nav: "partidos", title: "Arbitraje", keys: ["id"] },
   { re: /^clasificacion$/, view: StandingsView, nav: "clasificacion", title: "Clasificación" },
   { re: /^equipos$/, view: TeamsView, nav: "equipos", title: "Clubes" },
   { re: /^equipo\/([^/]+)$/, view: TeamsView, nav: "equipos", title: "Club", keys: ["id"] },

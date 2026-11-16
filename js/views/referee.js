@@ -34,7 +34,7 @@ function playersFor(teamId) {
 }
 
 function gateView(match) {
-  return \`<div class="container page referee-page">
+  return `<div class="container page referee-page">
     <a class="text-link" href="#/partidos/${esc(match.id)}">← Volver al partido</a>
     <section class="referee-gate panel">
       <div class="referee-mark">${icon("whistle", 30)}</div>
@@ -48,27 +48,27 @@ function gateView(match) {
         <p class="referee-error" data-ref-error hidden>Código incorrecto. Inténtalo de nuevo.</p>
       </form>
     </section>
-  </div>\`;
+  </div>`;
 }
 
 function setupView(match, existing = null) {
   const home = store.team(match.homeTeamId);
   const away = store.team(match.awayTeamId);
-  if (!home || !away) return \`<div class="container page">${icon("alert", 22)} <h2>Partido incompleto</h2><p>El organizador debe asignar los dos equipos antes de arbitrar.</p></div>\`;
+  if (!home || !away) return `<div class="container page">${icon("alert", 22)} <h2>Partido incompleto</h2><p>El organizador debe asignar los dos equipos antes de arbitrar.</p></div>`;
   const selectedHome = existing?.starters?.[home.id] || playersFor(home.id).slice(0, 7).map((p) => p.id);
   const selectedAway = existing?.starters?.[away.id] || playersFor(away.id).slice(0, 7).map((p) => p.id);
-  const roster = (team, selected) => \`<section class="referee-roster panel">
+  const roster = (team, selected) => `<section class="referee-roster panel">
     <div class="panel__head"><div><p class="eyebrow">Alineación inicial</p><h3>${esc(team.name)}</h3></div><span class="pill pill--outline" data-lineup-count="${esc(team.id)}">${selected.length}/7</span></div>
     <div class="referee-player-list">
-      ${playersFor(team.id).map((player) => \`<label class="referee-player">
+      ${playersFor(team.id).map((player) => `<label class="referee-player">
         <input type="checkbox" name="starter-${esc(team.id)}" value="${esc(player.id)}" ${selected.includes(player.id) ? "checked" : ""}>
         <span class="referee-player__number">${esc(player.number ?? "—")}</span>
         <span><strong>${esc(player.name)}</strong><small>${esc(player.position || "Jugador")}</small></span>
-      </label>\`).join("")}
+      </label>`).join("")}
     </div>
     <p class="field__hint">Selecciona exactamente 7 titulares.</p>
-  </section>\`;
-  return \`<div class="container page referee-page">
+  </section>`;
+  return `<div class="container page referee-page">
     <a class="text-link" href="#/partidos/${esc(match.id)}">← Volver al partido</a>
     <header class="referee-heading">
       <p class="eyebrow">PREPARACIÓN DEL ENCUENTRO</p><h1>Configurar arbitraje</h1>
@@ -87,7 +87,7 @@ function setupView(match, existing = null) {
       <div class="referee-lineups"><div class="referee-lineups__title"><p class="eyebrow">PLANTILLAS DEL PARTIDO</p><h2>7 inicial</h2></div>${roster(home, selectedHome)}${roster(away, selectedAway)}</div>
       <div class="referee-sticky-action"><button class="btn btn--primary btn--lg" type="submit">Guardar configuración y continuar ${icon("arrow-right", 17)}</button></div>
     </form>
-  </div>\`;
+  </div>`;
 }
 
 function elapsedMs(session) {
@@ -96,7 +96,7 @@ function elapsedMs(session) {
 
 function formatClock(ms) {
   const total = Math.floor(ms / 1000);
-  return \`${String(Math.floor(total / 60)).padStart(2, "0")}:${String(total % 60).padStart(2, "0")}\`;
+  return `${String(Math.floor(total / 60)).padStart(2, "0")}:${String(total % 60).padStart(2, "0")}`;
 }
 
 function currentMinute(session) {
@@ -105,26 +105,26 @@ function currentMinute(session) {
 }
 
 function minuteLabel(event) {
-  return \`${event.period === 2 ? "2T" : "1T"} · ${event.minute ?? 0}'${event.second ? \` ${String(event.second).padStart(2, "0")}s\` : ""}\`;
+  return `${event.period === 2 ? "2T" : "1T"} · ${event.minute ?? 0}'${event.second ? ` ${String(event.second).padStart(2, "0")}s` : ""}`;
 }
 
 function eventTitle(event) {
   const team = store.team(event.teamId);
   const player = store.player(event.playerId);
-  if (event.type === "goal") return \`Gol · ${player?.name || "Jugador"} (${team?.short || ""})\`;
-  if (event.type === "yellow") return \`Tarjeta amarilla · ${player?.name || "Jugador"}\`;
-  if (event.type === "red") return \`Tarjeta roja · ${player?.name || "Jugador"}\`;
-  if (event.type === "substitution") return \`Cambio · ${store.player(event.playerOutId)?.name || "—"} por ${store.player(event.playerInId)?.name || "—"}\`;
+  if (event.type === "goal") return `Gol · ${player?.name || "Jugador"} (${team?.short || ""})`;
+  if (event.type === "yellow") return `Tarjeta amarilla · ${player?.name || "Jugador"}`;
+  if (event.type === "red") return `Tarjeta roja · ${player?.name || "Jugador"}`;
+  if (event.type === "substitution") return `Cambio · ${store.player(event.playerOutId)?.name || "—"} por ${store.player(event.playerInId)?.name || "—"}`;
   return event.label || "Incidencia";
 }
 
 function timeline(session) {
-  return \`<div class="referee-timeline">
-    ${[...(session.events || [])].sort((a, b) => a.at - b.at).map((event) => \`<article class="referee-event">
+  return `<div class="referee-timeline">
+    ${[...(session.events || [])].sort((a, b) => a.at - b.at).map((event) => `<article class="referee-event">
       <span class="referee-event__dot referee-event__dot--${esc(event.type)}"></span>
       <div class="referee-event__body"><strong>${esc(eventTitle(event))}</strong><small>${esc(minuteLabel(event))}</small></div>
-    </article>\`).join("") || \`<p class="admin-empty">Todavía no hay incidencias registradas.</p>\`}
-  </div>\`;
+    </article>`).join("") || `<p class="admin-empty">Todavía no hay incidencias registradas.</p>`}
+  </div>`;
 }
 
 function actaView(match, session, confirmed = false) {
@@ -134,18 +134,18 @@ function actaView(match, session, confirmed = false) {
   const yellows = (session.events || []).filter((event) => event.type === "yellow").length;
   const reds = (session.events || []).filter((event) => event.type === "red").length;
   const subs = (session.events || []).filter((event) => event.type === "substitution").length;
-  return \`<div class="container page referee-page">
+  return `<div class="container page referee-page">
     <a class="text-link" href="#/partidos/${esc(match.id)}">← Volver al partido</a>
     <header class="referee-heading"><p class="eyebrow">DOCUMENTO ARBITRAL</p><h1>Acta arbitral</h1><p>${esc(home?.name)} vs ${esc(away?.name)} · ${esc(fmtDateLong(match.date))}</p></header>
     <section class="panel referee-report">
-      <div class="referee-report__top"><div><p class="eyebrow">IMEX LEAGUE · ${esc(match.title || \`Jornada ${match.matchday}\`)}</p><h2>Informe del árbitro</h2></div><span class="pill ${confirmed ? "pill--success" : "pill--warning"}">${confirmed ? "Acta confirmada" : "Pendiente de confirmar"}</span></div>
+      <div class="referee-report__top"><div><p class="eyebrow">IMEX LEAGUE · ${esc(match.title || `Jornada ${match.matchday}`)}</p><h2>Informe del árbitro</h2></div><span class="pill ${confirmed ? "pill--success" : "pill--warning"}">${confirmed ? "Acta confirmada" : "Pendiente de confirmar"}</span></div>
       <div class="referee-report__meta"><div><small>Árbitro</small><strong>${esc(session.referee)}</strong></div><div><small>Duración por mitad</small><strong>${esc(session.settings.halfMinutes)} min</strong></div><div><small>Medio tiempo</small><strong>${esc(session.settings.halftimeMinutes)} min</strong></div><div><small>Sustituciones</small><strong>${subs} / ${esc(session.settings.substitutionsAllowed)}</strong></div></div>
       <div class="referee-report__stats"><div><b>${goals}</b><span>Goles registrados</span></div><div><b>${yellows}</b><span>Amarillas</span></div><div><b>${reds}</b><span>Rojas</span></div><div><b>${subs}</b><span>Cambios</span></div></div>
       <div class="referee-report__notice"><strong>Este documento no registra el resultado oficial.</strong><span>El organizador deberá introducir el marcador manualmente en el formulario habitual del partido. Las incidencias arbitrales no modifican el marcador ni publican resultados.</span></div>
       <h3>Desarrollo del encuentro</h3>${timeline(session)}
-      ${confirmed ? \`<p class="referee-confirmed">Confirmada el ${esc(new Date(session.confirmedAt).toLocaleString("es-MX"))}</p>\` : \`<div class="referee-sticky-action"><button class="btn btn--primary btn--lg" type="button" data-confirm-acta>Confirmar acta arbitral</button></div>\`}
+      ${confirmed ? `<p class="referee-confirmed">Confirmada el ${esc(new Date(session.confirmedAt).toLocaleString("es-MX"))}</p>` : `<div class="referee-sticky-action"><button class="btn btn--primary btn--lg" type="button" data-confirm-acta>Confirmar acta arbitral</button></div>`}
     </section>
-  </div>\`;
+  </div>`;
 }
 
 function controlView(match, session) {
@@ -157,7 +157,7 @@ function controlView(match, session) {
   const readySecond = session.status === "ready-second";
   const finished = session.status === "finished";
   const periodLimit = (Number(session.settings.halfMinutes) + Number(session.addedMinutes?.[session.period - 1] || 0)) * 60000;
-  return \`<div class="container page referee-page referee-live">
+  return `<div class="container page referee-page referee-live">
     <a class="text-link" href="#/partidos/${esc(match.id)}">← Salir al partido</a>
     <header class="referee-heading"><p class="eyebrow">CENTRO DE CONTROL · ÁRBITRO</p><h1>${esc(home?.short)} <span>vs</span> ${esc(away?.short)}</h1><p>Árbitro: ${esc(session.referee)} · ${esc(match.pitch || "Cancha IMEX")}</p></header>
     <section class="referee-clock panel">
@@ -165,24 +165,24 @@ function controlView(match, session) {
       <div class="referee-clock__time mono" data-ref-clock>00:00</div>
       <p class="referee-clock__caption" data-ref-clock-caption>${running ? "Cronómetro en marcha" : "Cronómetro detenido"}</p>
       <div class="referee-clock__actions">
-        ${!session.startedAt ? \`<button class="btn btn--primary btn--lg" type="button" data-start>Iniciar partido</button>\` : ""}
-        ${live ? \`<button class="btn ${running ? "btn--danger" : "btn--primary"} btn--lg" type="button" data-pause>${running ? "Pausar cronómetro" : "Reanudar cronómetro"}</button><button class="btn btn--ghost" type="button" data-add-time>Añadir tiempo</button><button class="btn btn--ghost" type="button" data-lost-time>Registrar tiempo perdido</button>\` : ""}
-        ${halftime ? \`<div class="referee-break"><strong>Descanso</strong><span>${esc(session.settings.halftimeMinutes)} minutos</span></div><button class="btn btn--primary btn--lg" type="button" data-second-half>Iniciar segundo tiempo</button>\` : ""}
-        ${readySecond ? \`<button class="btn btn--primary btn--lg" type="button" data-second-half>Iniciar segundo tiempo</button>\` : ""}
-        ${finished ? \`<button class="btn btn--primary btn--lg" type="button" data-review-acta>Revisar acta arbitral</button>\` : ""}
+        ${!session.startedAt ? `<button class="btn btn--primary btn--lg" type="button" data-start>Iniciar partido</button>` : ""}
+        ${live ? `<button class="btn ${running ? "btn--danger" : "btn--primary"} btn--lg" type="button" data-pause>${running ? "Pausar cronómetro" : "Reanudar cronómetro"}</button><button class="btn btn--ghost" type="button" data-add-time>Añadir tiempo</button><button class="btn btn--ghost" type="button" data-lost-time>Registrar tiempo perdido</button>` : ""}
+        ${halftime ? `<div class="referee-break"><strong>Descanso</strong><span>${esc(session.settings.halftimeMinutes)} minutos</span></div><button class="btn btn--primary btn--lg" type="button" data-second-half>Iniciar segundo tiempo</button>` : ""}
+        ${readySecond ? `<button class="btn btn--primary btn--lg" type="button" data-second-half>Iniciar segundo tiempo</button>` : ""}
+        ${finished ? `<button class="btn btn--primary btn--lg" type="button" data-review-acta>Revisar acta arbitral</button>` : ""}
       </div>
       <p class="referee-clock__extra" data-ref-extra></p>
     </section>
-    ${live ? \`<section class="referee-actions panel"><p class="eyebrow">REGISTRAR INCIDENCIA</p><div class="referee-action-grid">
+    ${live ? `<section class="referee-actions panel"><p class="eyebrow">REGISTRAR INCIDENCIA</p><div class="referee-action-grid">
       <button class="referee-action referee-action--yellow" type="button" data-card="yellow"><span class="referee-card-icon"></span><strong>Amarilla</strong></button>
       <button class="referee-action referee-action--red" type="button" data-card="red"><span class="referee-card-icon"></span><strong>Roja</strong></button>
       <button class="referee-action" type="button" data-event="substitution">${icon("arrow-left-right", 23)}<strong>Cambio</strong></button>
       <button class="referee-action" type="button" data-event="goal">${icon("goal", 23)}<strong>Gol</strong></button>
-    </div></section>\` : ""}
+    </div></section>` : ""}
     <section class="panel"><div class="panel__head"><div><p class="eyebrow">REGISTRO EN VIVO</p><h3>Línea del tiempo</h3></div><span class="pill pill--outline">${session.events.length} incidencias</span></div>${timeline(session)}</section>
-    ${!finished ? \`<div class="referee-finish"><button class="btn btn--danger" type="button" data-finish>Finalizar partido</button></div>\` : \`<div class="referee-sticky-action"><button class="btn btn--primary btn--lg" type="button" data-review-acta>Revisar y confirmar acta</button></div>\`}
+    ${!finished ? `<div class="referee-finish"><button class="btn btn--danger" type="button" data-finish>Finalizar partido</button></div>` : `<div class="referee-sticky-action"><button class="btn btn--primary btn--lg" type="button" data-review-acta>Revisar y confirmar acta</button></div>`}
     <div data-event-modal-root></div>
-  </div>\`;
+  </div>`;
 }
 
 function eventPicker(root, match, session, type) {
@@ -194,16 +194,16 @@ function eventPicker(root, match, session, type) {
     const active = session.activePlayerIds[teamId] || [];
     const roster = playersFor(teamId);
     const list = mode === "out" ? roster.filter((p) => active.includes(p.id)) : mode === "in" ? roster.filter((p) => !active.includes(p.id) && !(session.sentOffPlayerIds || []).includes(p.id)) : roster.filter((p) => active.includes(p.id));
-    return list.map((p) => \`<option value="${esc(p.id)}">${esc(p.number ?? "—")} · ${esc(p.name)}</option>\`).join("");
+    return list.map((p) => `<option value="${esc(p.id)}">${esc(p.number ?? "—")} · ${esc(p.name)}</option>`).join("");
   };
   const isChange = type === "substitution";
-  modalRoot.innerHTML = \`<div class="referee-modal-backdrop" data-event-backdrop><form class="referee-event-modal panel" data-event-form>
+  modalRoot.innerHTML = `<div class="referee-modal-backdrop" data-event-backdrop><form class="referee-event-modal panel" data-event-form>
     <button class="referee-modal-close" type="button" data-event-cancel aria-label="Cerrar">×</button>
     <p class="eyebrow">NUEVA INCIDENCIA</p><h2>${type === "goal" ? "Registrar gol" : isChange ? "Registrar cambio" : type === "yellow" ? "Tarjeta amarilla" : "Tarjeta roja"}</h2>
-    <label class="field"><span>Equipo</span><select name="teamId" required><option value="">Seleccionar equipo</option>${teamOptions.map((t) => \`<option value="${esc(t.id)}">${esc(t.name)}</option>\`).join("")}</select></label>
-    ${isChange ? \`<label class="field"><span>Jugador que sale</span><select name="playerOutId" required disabled><option value="">Selecciona equipo primero</option></select></label><label class="field"><span>Jugador que entra</span><select name="playerInId" required disabled><option value="">Selecciona equipo primero</option></select></label>\` : \`<label class="field"><span>Jugador</span><select name="playerId" required disabled><option value="">Selecciona equipo primero</option></select></label>\`}
+    <label class="field"><span>Equipo</span><select name="teamId" required><option value="">Seleccionar equipo</option>${teamOptions.map((t) => `<option value="${esc(t.id)}">${esc(t.name)}</option>`).join("")}</select></label>
+    ${isChange ? `<label class="field"><span>Jugador que sale</span><select name="playerOutId" required disabled><option value="">Selecciona equipo primero</option></select></label><label class="field"><span>Jugador que entra</span><select name="playerInId" required disabled><option value="">Selecciona equipo primero</option></select></label>` : `<label class="field"><span>Jugador</span><select name="playerId" required disabled><option value="">Selecciona equipo primero</option></select></label>`}
     <div class="referee-modal-actions"><button class="btn btn--ghost" type="button" data-event-cancel>Cancelar</button><button class="btn btn--primary" type="submit">Registrar</button></div>
-  </form></div>\`;
+  </form></div>`;
   const form = modalRoot.querySelector("form");
   const teamSelect = form.elements.teamId;
   teamSelect.addEventListener("change", () => {
@@ -244,7 +244,7 @@ function eventPicker(root, match, session, type) {
         session.sentOffPlayerIds = [...(session.sentOffPlayerIds || []), playerId];
       }
     }
-    persist(match, session, \`referee-${type}\`);
+    persist(match, session, `referee-${type}`);
     modalRoot.innerHTML = "";
   });
 }
@@ -252,11 +252,11 @@ function eventPicker(root, match, session, type) {
 function askMinutes(root, match, session, type) {
   const label = type === "added" ? "Minutos de tiempo añadido" : "Minutos perdidos";
   const modalRoot = root.querySelector("[data-event-modal-root]");
-  modalRoot.innerHTML = \`<div class="referee-modal-backdrop"><form class="referee-event-modal panel" data-minutes-form>
+  modalRoot.innerHTML = `<div class="referee-modal-backdrop"><form class="referee-event-modal panel" data-minutes-form>
     <p class="eyebrow">CONTROL DEL TIEMPO</p><h2>${label}</h2>
     <label class="field"><span>Minutos</span><input name="minutes" type="number" min="1" max="30" value="1" required></label>
     <div class="referee-modal-actions"><button class="btn btn--ghost" type="button" data-event-cancel>Cancelar</button><button class="btn btn--primary" type="submit">Guardar</button></div>
-  </form></div>\`;
+  </form></div>`;
   modalRoot.querySelector("[data-event-cancel]").addEventListener("click", () => { modalRoot.innerHTML = ""; });
   modalRoot.querySelector("form").addEventListener("submit", (event) => {
     event.preventDefault();
@@ -267,16 +267,16 @@ function askMinutes(root, match, session, type) {
     } else {
       session.lostMinutes[session.period - 1] = (session.lostMinutes[session.period - 1] || 0) + minutes;
     }
-    session.events.push({ id: crypto.randomUUID(), type: type === "added" ? "added_time" : "lost_time", label: \`${label}: ${minutes} min\`, ...stamp, at: Date.now() });
-    persist(match, session, \`referee-${type}-time\`);
+    session.events.push({ id: crypto.randomUUID(), type: type === "added" ? "added_time" : "lost_time", label: `${label}: ${minutes} min`, ...stamp, at: Date.now() });
+    persist(match, session, `referee-${type}-time`);
     modalRoot.innerHTML = "";
   });
 }
 
 function flashCard(root, match, session, type) {
   const overlay = document.createElement("div");
-  overlay.className = \`referee-flash referee-flash--${type}\`;
-  overlay.innerHTML = \`<div><span class="referee-flash__card"></span><strong>TARJETA ${type === "yellow" ? "AMARILLA" : "ROJA"}</strong></div>\`;
+  overlay.className = `referee-flash referee-flash--${type}`;
+  overlay.innerHTML = `<div><span class="referee-flash__card"></span><strong>TARJETA ${type === "yellow" ? "AMARILLA" : "ROJA"}</strong></div>`;
   root.appendChild(overlay);
   window.setTimeout(() => {
     overlay.remove();
@@ -343,7 +343,7 @@ function bindClock(root, match, session) {
     if (extra) {
       const add = session.addedMinutes?.[session.period - 1] || 0;
       const lost = session.lostMinutes?.[session.period - 1] || 0;
-      extra.textContent = \`Tiempo añadido: +${add} min · Tiempo perdido registrado: ${lost} min\`;
+      extra.textContent = `Tiempo añadido: +${add} min · Tiempo perdido registrado: ${lost} min`;
     }
     const target = (Number(session.settings.halfMinutes) + Number(session.addedMinutes?.[session.period - 1] || 0)) * 60000;
     if (session.status === "live" && session.runningSince && elapsed >= target) {
@@ -357,8 +357,8 @@ function bindClock(root, match, session) {
 export default {
   render({ params }) {
     const match = store.match(params.id);
-    if (!match) return \`<div class="container page"><h2>Partido no encontrado</h2><a href="#/partidos">Volver a partidos</a></div>\`;
-    if (sessionStorage.getItem(\`imex.referee.${match.id}\`) !== "ok") return gateView(match);
+    if (!match) return `<div class="container page"><h2>Partido no encontrado</h2><a href="#/partidos">Volver a partidos</a></div>`;
+    if (sessionStorage.getItem(`imex.referee.${match.id}`) !== "ok") return gateView(match);
     const session = sessionFor(match);
     if (!session) return setupView(match);
     if (session.status === "finished") return actaView(match, session, false);
@@ -368,7 +368,7 @@ export default {
   bind(root, { params }) {
     const match = store.match(params.id);
     if (!match) return;
-    if (sessionStorage.getItem(\`imex.referee.${match.id}\`) !== "ok") {
+    if (sessionStorage.getItem(`imex.referee.${match.id}`) !== "ok") {
       root.querySelector("[data-ref-gate]")?.addEventListener("submit", (event) => {
         event.preventDefault();
         const code = new FormData(event.currentTarget).get("code");
@@ -376,8 +376,8 @@ export default {
           root.querySelector("[data-ref-error]").hidden = false;
           return;
         }
-        sessionStorage.setItem(\`imex.referee.${match.id}\`, "ok");
-        location.hash = \`#/arbitraje/${encodeURIComponent(match.id)}?acceso=1\`;
+        sessionStorage.setItem(`imex.referee.${match.id}`, "ok");
+        location.hash = `#/arbitraje/${encodeURIComponent(match.id)}?acceso=1`;
       });
       return;
     }
@@ -385,15 +385,15 @@ export default {
     if (!session) {
       const form = root.querySelector("[data-ref-setup]");
       form?.querySelectorAll('input[type="checkbox"]').forEach((input) => input.addEventListener("change", () => {
-        const count = form.querySelectorAll(\`input[name="${input.name}"]:checked\`).length;
-        const badge = form.querySelector(\`[data-lineup-count="${input.name.replace("starter-", "")}"]\`);
-        if (badge) badge.textContent = \`${count}/7\`;
+        const count = form.querySelectorAll(`input[name="${input.name}"]:checked`).length;
+        const badge = form.querySelector(`[data-lineup-count="${input.name.replace("starter-", "")}"]`);
+        if (badge) badge.textContent = `${count}/7`;
       }));
       form?.addEventListener("submit", (event) => {
         event.preventDefault();
         const data = new FormData(form);
-        const homeIds = data.getAll(\`starter-${match.homeTeamId}\`);
-        const awayIds = data.getAll(\`starter-${match.awayTeamId}\`);
+        const homeIds = data.getAll(`starter-${match.homeTeamId}`);
+        const awayIds = data.getAll(`starter-${match.awayTeamId}`);
         if (homeIds.length !== 7 || awayIds.length !== 7) {
           toast("Debes seleccionar exactamente 7 titulares por equipo.", "danger");
           return;
@@ -428,7 +428,7 @@ export default {
           return;
         }
         persist(match, next, "referee-setup");
-        location.hash = \`#/arbitraje/${encodeURIComponent(match.id)}?preparado=1\`;
+        location.hash = `#/arbitraje/${encodeURIComponent(match.id)}?preparado=1`;
       });
       return;
     }

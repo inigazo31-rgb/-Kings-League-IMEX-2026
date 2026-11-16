@@ -364,7 +364,7 @@ function bindClock(root, match, session) {
     }
   };
   update();
-  clockInterval = window.setInterval(update, 250);
+  if (session.runningSince || session.status === "halftime") clockInterval = window.setInterval(update, 250);
 }
 
 export default {

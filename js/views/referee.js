@@ -309,7 +309,8 @@ function pauseClock(match, session) {
 }
 
 function finishPeriod(match, session) {
-  session.elapsedMs = elapsedMs(session);
+  const periodLimit = (Number(session.settings.halfMinutes) + Number(session.addedMinutes?.[session.period - 1] || 0)) * 60000;
+  session.elapsedMs = Math.min(elapsedMs(session), periodLimit);
   session.runningSince = null;
   if (session.period === 1) {
     session.status = "halftime";

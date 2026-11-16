@@ -11,6 +11,7 @@ function sessionFor(match) {
 }
 
 function persist(match, session, reason = "referee-update") {
+  clearInterval(clockInterval);
   match.refereeSession = session;
   store.save(reason);
   // A referee action is important: flush the existing debounced remote save now.
@@ -180,7 +181,8 @@ function controlView(match, session) {
       <button class="referee-action" type="button" data-event="goal">${icon("goal", 23)}<strong>Gol</strong></button>
     </div></section>` : ""}
     <section class="panel"><div class="panel__head"><div><p class="eyebrow">REGISTRO EN VIVO</p><h3>Línea del tiempo</h3></div><span class="pill pill--outline">${session.events.length} incidencias</span></div>${timeline(session)}</section>
-    ${!finished ? `<div class="referee-finish"><button class="btn btn--danger" type="button" data-finish>Finalizar partido</button></div>` : `<div class="referee-sticky-action"><button class="btn btn--primary btn--lg" type="button" data-review-acta>Revisar y confirmar acta</button></div>`}
+    ${!finished && session.startedAt ? `<div class="referee-finish"><button class="btn btn--danger" type="button" data-finish>Finalizar partido</button></div>` : ""}
+    ${finished ? `<div class="referee-sticky-action"><button class="btn btn--primary btn--lg" type="button" data-review-acta>Revisar y confirmar acta</button></div>` : ""}
     <div data-event-modal-root></div>
   </div>`;
 }
@@ -335,9 +337,20 @@ function bindClock(root, match, session) {
   const update = () => {
     const clock = root.querySelector("[data-ref-clock]");
     if (!clock) return;
+    const caption = root.querySelector("[data-ref-clock-caption]");
+    if (session.status === "halftime") {
+      const breakElapsed = Math.max(0, Date.now() - (session.halftimeStartedAt || Date.now()));
+      const remaining = Math.max(0, Number(session.settings.halftimeMinutes) * 60000 - breakElapsed);
+      clock.textContent = formatClock(remaining);
+      if (caption) caption.textContent = "Descanso · tiempo restante";
+      if (remaining <= 0) {
+        session.status = "ready-second";
+        persist(match, session, "referee-halftime-ended");
+      }
+      return;
+    }
     const elapsed = elapsedMs(session);
     clock.textContent = formatClock(elapsed);
-    const caption = root.querySelector("[data-ref-clock-caption]");
     if (caption) caption.textContent = session.runningSince ? "Cronómetro en marcha" : "Cronómetro detenido";
     const extra = root.querySelector("[data-ref-extra]");
     if (extra) {
@@ -469,6 +482,6 @@ export default {
       persist(match, session, "referee-acta-confirmed");
       root.innerHTML = actaView(match, session, true);
     });
-    if (session.status === "live") bindClock(root, match, session);
+    if (session.status === "live" || session.status === "halftime") bindClock(root, match, session);
   }
 };

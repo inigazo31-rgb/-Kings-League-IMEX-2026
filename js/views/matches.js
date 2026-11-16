@@ -1,6 +1,6 @@
 import { store } from "../store.js";
 import { esc, icon, number, fmtDateLong, fmtDate, countdown, statusPill, teamCrest, emptyState, positionLabel } from "../utils.js";
-import { pageHead, sectionHead } from "../ui.js";
+import { pageHead, sectionHead, toast } from "../ui.js";
 import { matchRow, openMatchResult, field } from "./shared.js";
 
 function groupByMatchday(matches) {

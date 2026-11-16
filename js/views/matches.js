@@ -67,7 +67,7 @@ function bracketView() {
 function listView(tab) {
   let matches = [...store.state.matches];
   if (tab === "resultados") matches = matches.filter((match) => match.status === "finished");
-  if (tab === "proximos") matches = matches.filter((match) => match.status !== "finished");
+  if (tab === "proximos") matches = matches.filter((match) => match.status !== "finished" && match.status !== "cancelled");
   matches.sort((a, b) => `${a.date} ${a.time}`.localeCompare(`${b.date} ${b.time}`));
   if (!matches.length) {
     return emptyState("Sin partidos", "No hay partidos que coincidan con este filtro.", `<button class="btn btn--primary btn--sm" type="button" data-new-match>Programar partido</button>`);
@@ -113,7 +113,7 @@ function monthGrid(ym, byDate) {
     ${monthMatches.length ? `<div class="cal-list">${monthMatches.map((match) => `<a class="cal-list__row" href="#/partidos/${esc(match.id)}">
       <span class="mono small">${esc(fmtDate(match.date))} · ${esc(match.time || "—")}</span>
       <strong>${esc(matchLabel(match))}</strong>
-      <span class="pill ${match.status === "finished" ? "pill--muted" : "pill--accent"}">${match.status === "finished" ? "Final" : "Programado"}</span>
+      <span class="pill ${match.status === "finished" ? "pill--muted" : "pill--accent"}">${match.status === "finished" ? "Final" : match.status === "cancelled" ? "Cancelado" : "Programado"}</span>
     </a>`).join("")}</div>` : ""}
   </section>`;
 }
@@ -196,7 +196,7 @@ function detail(match) {
         <span>${icon("calendar", 12)} ${esc(fmtDateLong(match.date))}</span>
         <span>${icon("clock", 12)} ${esc(match.time || "—")}</span>
         <span>${icon("target", 12)} ${esc(match.pitch || "Estadio IMEX")}</span>
-        ${finished ? statusPill("Finalizado", "muted") : statusPill("Programado", "accent")}
+        ${finished ? statusPill("Finalizado", "muted") : match.status === "cancelled" ? statusPill("Cancelado", "muted") : statusPill("Programado", "accent")}
       </div>
       ${match.notes ? `<p class="modal-copy" style="margin-top:14px;padding-top:14px;border-top:1px solid var(--border)">${esc(match.notes)}</p>` : ""}
       ${!finished ? `<div class="row row--between" style="margin-top:16px;flex-wrap:wrap;gap:12px">
@@ -205,7 +205,7 @@ function detail(match) {
       </div>` : ""}
     </div>
 
-    <section class="panel referee-entry-panel" style="margin-bottom:20px"><div class="panel__head"><div><p class="eyebrow">OFICIALES DEL PARTIDO</p><h3>Arbitraje digital</h3><p>Control del encuentro y acta arbitral independiente del resultado oficial.</p></div></div><a class="btn btn--primary btn--sm" href="#/arbitraje/${esc(match.id)}">${match.refereeSession?.confirmedAt ? `${icon("file-check", 15)} Ver acta arbitral` : `${icon("whistle", 15)} Arbitrear partido`}</a></section>
+    ${match.status !== "cancelled" ? `<section class="panel referee-entry-panel" style="margin-bottom:20px"><div class="panel__head"><div><p class="eyebrow">OFICIALES DEL PARTIDO</p><h3>Arbitraje digital</h3><p>Control del encuentro y acta arbitral independiente del resultado oficial.</p></div></div><a class="btn btn--primary btn--sm" href="#/arbitraje/${esc(match.id)}">${match.refereeSession?.confirmedAt ? `${icon("file-check", 15)} Ver acta arbitral` : `${icon("whistle", 15)} Arbitrear partido`}</a></section>` : ""}
     ${playerStatsPanel(match, home, away)}
     <div class="grid grid--2" style="align-items:start">
       <section class="panel">
@@ -238,7 +238,7 @@ function detail(match) {
           <div class="detail-list__row"><span>Grupo</span><strong>${esc(match.group || "—")}</strong></div>
           <div class="detail-list__row"><span>MVP</span><strong>${esc(mvp?.name || "Por designar")}</strong></div>
           <div class="detail-list__row"><span>Dado</span><strong>${esc(match.diceEvent || "Pendiente")}</strong></div>
-          <div class="detail-list__row"><span>Estado</span><strong>${finished ? "Resultado oficial" : "Programado"}</strong></div>
+          <div class="detail-list__row"><span>Estado</span><strong>${finished ? "Resultado oficial" : match.status === "cancelled" ? "Cancelado" : "Programado"}</strong></div>
         </div>
       </section>
     </div>

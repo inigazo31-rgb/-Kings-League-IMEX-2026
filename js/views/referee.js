@@ -374,8 +374,8 @@ export default {
     if (sessionStorage.getItem(`imex.referee.${match.id}`) !== "ok") return gateView(match);
     const session = sessionFor(match);
     if (!session) return setupView(match);
-    if (session.status === "finished") return actaView(match, session, false);
     if (session.confirmedAt) return actaView(match, session, true);
+    if (session.status === "finished") return actaView(match, session, false);
     return controlView(match, session);
   },
   bind(root, { params }) {

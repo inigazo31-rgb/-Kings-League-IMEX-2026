@@ -110,9 +110,10 @@ function matchesTab() {
                 <td data-label="Partido"><a class="table__club" href="#/partidos/${esc(match.id)}"><span>${esc(home?.short || "TBD")} vs ${esc(away?.short || "TBD")}</span></a><span class="table__muted">${esc(match.title || `Jornada ${match.matchday}`)}</span></td>
                 <td data-label="Fase"><span class="pill pill--outline">${esc(match.phase === "groups" ? `J${match.matchday}` : match.phase === "semifinals" ? "Semi" : "Final")}</span></td>
                 <td class="table__num" data-label="Marcador">${match.status === "finished" ? `${match.homeScore} – ${match.awayScore}` : "—"}</td>
-                <td data-label="Estado">${statusPill(match.status === "finished" ? "Finalizado" : "Programado", match.status === "finished" ? "muted" : "accent")}</td>
+                <td data-label="Estado">${statusPill(match.status === "finished" ? "Finalizado" : match.status === "cancelled" ? "Cancelado" : "Programado", match.status === "finished" || match.status === "cancelled" ? "muted" : "accent")}</td>
                 <td data-label="Acciones"><div class="table__actions">
-                  <button class="btn btn--ghost btn--xs" type="button" data-result="${esc(match.id)}" ${home && away ? "" : "disabled"}>${match.status === "finished" ? "Editar" : "Resultado"}</button>
+                  <button class="btn btn--ghost btn--xs" type="button" data-result="${esc(match.id)}" ${home && away && match.status !== "cancelled" ? "" : "disabled"}>${match.status === "finished" ? "Editar" : "Resultado"}</button>
+                  ${match.status !== "finished" && !match.refereeSession?.startedAt && !match.refereeSession?.confirmedAt ? `<button class="btn btn--ghost btn--xs" type="button" data-reschedule-match="${esc(match.id)}">Reprogramar</button><button class="btn btn--danger btn--xs" type="button" data-cancel-match="${esc(match.id)}" ${match.status === "cancelled" ? "disabled" : ""}>Cancelar</button>` : ""}
                   <a class="btn btn--ghost btn--xs" href="#/partidos/${esc(match.id)}">Ver</a>
                 </div></td>
               </tr>`;
@@ -606,6 +607,26 @@ export default {
           const result = store.startTournament();
           toast(result.ok ? "Torneo iniciado." : result.message, result.ok ? "success" : "danger");
         }
+      });
+    });
+
+    root.querySelectorAll("[data-reschedule-match]").forEach((button) => {
+      button.addEventListener("click", () => openMatchForm(null, button.dataset.rescheduleMatch));
+    });
+    root.querySelectorAll("[data-cancel-match]").forEach((button) => {
+      button.addEventListener("click", () => {
+        const match = store.match(button.dataset.cancelMatch);
+        if (!match || match.status === "cancelled") return;
+        confirmDialog({
+          title: "Cancelar partido",
+          message: `Se cancelará ${store.team(match.homeTeamId)?.short || "TBD"} vs ${store.team(match.awayTeamId)?.short || "TBD"}. El partido permanecerá en el calendario como cancelado y podrás reprogramarlo después.`,
+          confirmLabel: "Cancelar partido",
+          tone: "danger-solid",
+          onConfirm: () => {
+            const result = store.cancelMatch(match.id);
+            toast(result.message, result.ok ? "success" : "danger");
+          }
+        });
       });
     });
 

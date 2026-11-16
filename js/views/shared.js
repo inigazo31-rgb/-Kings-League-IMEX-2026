@@ -318,10 +318,16 @@ export function openMatchResult(match, onDone) {
   });
 }
 
-export function openMatchForm(onDone) {
+export function openMatchForm(onDone, matchId = null) {
+  const match = matchId ? store.match(matchId) : null;
+  if (match && (match.status === "finished" || match.refereeSession?.startedAt || match.refereeSession?.confirmedAt)) {
+    toast("Este partido ya no se puede reprogramar.", "warning");
+    return;
+  }
+  const editing = Boolean(match);
   const teamOptions = store.state.teams.map((team) => ({ value: team.id, label: `${team.name} · Grupo ${team.group}` }));
   openModal({
-    title: "Programar partido",
+    title: editing ? "Reprogramar partido" : "Programar partido",
     eyebrow: "Calendario oficial",
     size: "lg",
     body: `<form data-match-form>
@@ -343,7 +349,7 @@ export function openMatchForm(onDone) {
         ${field({ label: "Fecha", name: "date", type: "date", value: match?.date || new Date().toISOString().slice(0, 10), required: true })}
         ${field({ label: "Hora", name: "time", type: "time", value: match?.time || "10:30", required: true })}
         ${field({ label: "Cancha", name: "pitch", value: match?.pitch || "Cancha Principal IMEX", full: true })}
-        ${field({ label: "Notas", name: "notes", type: "textarea", rows: 2, full: true })}
+        ${field({ label: "Notas", name: "notes", type: "textarea", value: match?.notes || "", rows: 2, full: true })}
       </div>
       <div class="form-actions">
         <button class="btn btn--ghost" type="button" data-modal-close>Cancelar</button>

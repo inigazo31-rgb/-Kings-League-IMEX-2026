@@ -205,6 +205,8 @@ function detail(match) {
       </div>` : ""}
     </div>
 
+
+    ${store.isAdmin() ? `<details class="panel" style="margin-bottom:20px"><summary style="cursor:pointer;font-weight:700">Administrar partido</summary><form data-reschedule-form style="margin-top:14px"><div class="form-grid"><label class="field"><span>Nueva fecha</span><input type="date" name="date" value="${esc(match.date || "")}" required></label><label class="field"><span>Nueva hora</span><input type="time" name="time" value="${esc(match.time || "10:30")}" required></label><label class="field field--full"><span>Cancha</span><input name="pitch" value="${esc(match.pitch || "")}" placeholder="Cancha IMEX"></label></div><button class="btn btn--primary btn--sm" type="submit">Guardar reprogramación</button></form><button class="btn btn--danger btn--sm" type="button" data-cancel-match style="margin-top:10px" ${match.status === "finished" || match.status === "cancelled" ? "disabled" : ""}>Cancelar partido</button></details>` : ""}
     ${match.status !== "cancelled" ? `<section class="panel referee-entry-panel" style="margin-bottom:20px"><div class="panel__head"><div><p class="eyebrow">OFICIALES DEL PARTIDO</p><h3>Arbitraje digital</h3><p>Control del encuentro y acta arbitral independiente del resultado oficial.</p></div></div><a class="btn btn--primary btn--sm" href="#/arbitraje/${esc(match.id)}">${match.refereeSession?.confirmedAt ? `${icon("file-check", 15)} Ver acta arbitral` : `${icon("whistle", 15)} Arbitrear partido`}</a></section>` : ""}
     ${playerStatsPanel(match, home, away)}
     <div class="grid grid--2" style="align-items:start">
@@ -283,6 +285,27 @@ export default {
       const match = store.match(params.id);
       root.querySelector("[data-result]")?.addEventListener("click", () => {
         if (match) openMatchResult(match);
+      });
+      root.querySelector("[data-reschedule-form]")?.addEventListener("submit", (event) => {
+        event.preventDefault();
+        const data = new FormData(event.currentTarget);
+        const date = String(data.get("date") || "");
+        const time = String(data.get("time") || "");
+        if (!date || !time) return;
+        match.date = date;
+        match.time = time;
+        match.pitch = String(data.get("pitch") || "").trim() || "Cancha IMEX";
+        if (match.status === "cancelled") match.status = "scheduled";
+        store.save("match-rescheduled");
+        toast("Partido reprogramado correctamente.", "success");
+        location.hash = "#/partidos/" + encodeURIComponent(match.id) + "?reprogramado=1";
+      });
+      root.querySelector("[data-cancel-match]")?.addEventListener("click", () => {
+        if (!window.confirm("¿Cancelar este partido? Se conservarán sus datos y el acta arbitral.")) return;
+        match.status = "cancelled";
+        store.save("match-cancelled");
+        toast("Partido cancelado.", "success");
+        location.hash = "#/partidos/" + encodeURIComponent(match.id) + "?cancelado=1";
       });
     }
   }

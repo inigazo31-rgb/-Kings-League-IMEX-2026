@@ -145,6 +145,7 @@ function actaView(match, session, confirmed = false) {
       <div class="referee-report__notice"><strong>Este documento no registra el resultado oficial.</strong><span>El organizador deberá introducir el marcador manualmente en el formulario habitual del partido. Las incidencias arbitrales no modifican el marcador ni publican resultados.</span></div>
       <h3>Desarrollo del encuentro</h3>${timeline(session)}
       ${confirmed ? `<p class="referee-confirmed">Confirmada el ${esc(new Date(session.confirmedAt).toLocaleString("es-MX"))}</p>` : `<div class="referee-sticky-action"><button class="btn btn--primary btn--lg" type="button" data-confirm-acta>Confirmar acta arbitral</button></div>`}
+      <div class="referee-finish"><button class="btn btn--danger" type="button" data-reset-referee>Reiniciar arbitraje desde cero</button></div>
     </section>
   </div>`;
 }
@@ -183,6 +184,7 @@ function controlView(match, session) {
     <section class="panel"><div class="panel__head"><div><p class="eyebrow">REGISTRO EN VIVO</p><h3>Línea del tiempo</h3></div><span class="pill pill--outline">${session.events.length} incidencias</span></div>${timeline(session)}</section>
     ${!finished && session.startedAt ? `<div class="referee-finish"><button class="btn btn--danger" type="button" data-finish>Finalizar partido</button></div>` : ""}
     ${finished ? `<div class="referee-sticky-action"><button class="btn btn--primary btn--lg" type="button" data-review-acta>Revisar y confirmar acta</button></div>` : ""}
+    <div class="referee-finish"><button class="btn btn--danger" type="button" data-reset-referee>Reiniciar arbitraje desde cero</button></div>
     <div data-event-modal-root></div>
   </div>`;
 }
@@ -446,6 +448,13 @@ export default {
       });
       return;
     }
+    root.querySelector("[data-reset-referee]")?.addEventListener("click", () => {
+      if (!window.confirm("¿Reiniciar el partido desde cero? Se borrarán cronómetro, alineaciones, goles, tarjetas, cambios e incidencias del acta arbitral. El resultado oficial del torneo no se modificará.")) return;
+      clearInterval(clockInterval);
+      match.refereeSession = null;
+      store.save("referee-reset");
+      location.hash = "#/arbitraje/" + encodeURIComponent(match.id) + "?reiniciado=" + Date.now();
+    });
     if (session.confirmedAt) return;
     root.querySelector("[data-start]")?.addEventListener("click", () => startClock(match, session));
     root.querySelector("[data-pause]")?.addEventListener("click", () => pauseClock(match, session));

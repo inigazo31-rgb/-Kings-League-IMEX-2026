@@ -205,6 +205,7 @@ function detail(match) {
       </div>` : ""}
     </div>
 
+    <section class="panel referee-entry-panel" style="margin-bottom:20px"><div class="panel__head"><div><p class="eyebrow">OFICIALES DEL PARTIDO</p><h3>Arbitraje digital</h3><p>Control del encuentro y acta arbitral independiente del resultado oficial.</p></div></div><a class="btn btn--primary btn--sm" href="#/arbitraje/${esc(match.id)}">${match.refereeSession?.confirmedAt ? `${icon("file-check", 15)} Ver acta arbitral` : `${icon("whistle", 15)} Arbitrear partido`}</a></section>
     ${playerStatsPanel(match, home, away)}
     <div class="grid grid--2" style="align-items:start">
       <section class="panel">

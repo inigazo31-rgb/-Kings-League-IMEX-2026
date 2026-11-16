@@ -326,28 +326,28 @@ export function openMatchForm(onDone) {
     size: "lg",
     body: `<form data-match-form>
       <div class="form-grid">
-        ${field({ label: "Fase", name: "phase", type: "select", value: "groups", options: [
+        ${field({ label: "Fase", name: "phase", type: "select", value: match?.phase || "groups", options: [
           { value: "groups", label: "Fase de grupos" },
           { value: "semifinals", label: "Semifinal" },
           { value: "final", label: "Final" }
         ] })}
-        ${field({ label: "Grupo", name: "group", type: "select", value: "A", options: [
+        ${field({ label: "Grupo", name: "group", type: "select", value: match?.group || "A", options: [
           { value: "A", label: "Grupo A" },
           { value: "B", label: "Grupo B" },
           { value: "", label: "Sin grupo" }
         ] })}
-        ${field({ label: "Jornada", name: "matchday", type: "number", value: 2, min: 1, max: 20 })}
-        ${field({ label: "Título (opcional)", name: "title", value: "", placeholder: "Semifinal 1, Gran Final…" })}
-        ${field({ label: "Club local", name: "homeTeamId", type: "select", value: teamOptions[0]?.value, options: teamOptions })}
-        ${field({ label: "Club visitante", name: "awayTeamId", type: "select", value: teamOptions[1]?.value, options: teamOptions })}
-        ${field({ label: "Fecha", name: "date", type: "date", value: new Date().toISOString().slice(0, 10), required: true })}
-        ${field({ label: "Hora", name: "time", type: "time", value: "10:30", required: true })}
-        ${field({ label: "Cancha", name: "pitch", value: "Cancha Principal IMEX", full: true })}
+        ${field({ label: "Jornada", name: "matchday", type: "number", value: match?.matchday ?? 2, min: 1, max: 20 })}
+        ${field({ label: "Título (opcional)", name: "title", value: match?.title || "", placeholder: "Semifinal 1, Gran Final…" })}
+        ${field({ label: "Club local", name: "homeTeamId", type: "select", value: match?.homeTeamId || teamOptions[0]?.value, options: teamOptions })}
+        ${field({ label: "Club visitante", name: "awayTeamId", type: "select", value: match?.awayTeamId || teamOptions[1]?.value, options: teamOptions })}
+        ${field({ label: "Fecha", name: "date", type: "date", value: match?.date || new Date().toISOString().slice(0, 10), required: true })}
+        ${field({ label: "Hora", name: "time", type: "time", value: match?.time || "10:30", required: true })}
+        ${field({ label: "Cancha", name: "pitch", value: match?.pitch || "Cancha Principal IMEX", full: true })}
         ${field({ label: "Notas", name: "notes", type: "textarea", rows: 2, full: true })}
       </div>
       <div class="form-actions">
         <button class="btn btn--ghost" type="button" data-modal-close>Cancelar</button>
-        <button class="btn btn--primary" type="submit">Programar partido</button>
+        <button class="btn btn--primary" type="submit">${editing ? "Guardar nueva programación" : "Programar partido"}</button>
       </div>
     </form>`,
     onMount(root, close) {
@@ -355,8 +355,14 @@ export function openMatchForm(onDone) {
       form.addEventListener("submit", (event) => {
         event.preventDefault();
         const values = formValues(form);
-        store.createMatch(values);
-        toast("Partido programado.", "success");
+        if (editing) {
+          const result = store.rescheduleMatch(match.id, values);
+          if (!result.ok) { toast(result.message, "danger"); return; }
+          toast(result.message, "success");
+        } else {
+          store.createMatch(values);
+          toast("Partido programado.", "success");
+        }
         close();
         onDone?.();
       });

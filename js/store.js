@@ -440,7 +440,7 @@ class Store {
 
   upcoming(limit = 6) {
     return this.state.matches
-      .filter((match) => match.status !== "finished")
+      .filter((match) => match.status !== "finished" && match.status !== "cancelled")
       .sort((a, b) => `${a.date} ${a.time}`.localeCompare(`${b.date} ${b.time}`))
       .slice(0, limit);
   }
@@ -1015,6 +1015,39 @@ class Store {
     this.addActivity("match", `Se programó ${this.team(match.homeTeamId)?.name || "TBD"} vs ${this.team(match.awayTeamId)?.name || "TBD"}.`);
     this.save("match-create");
     return match;
+  }
+
+  rescheduleMatch(matchId, data) {
+    const match = this.match(matchId);
+    if (!this.isAdmin()) return { ok: false, message: "Solo el organizador puede reprogramar partidos." };
+    if (!match || match.status === "finished") return { ok: false, message: "No se puede reprogramar este partido." };
+    if (match.refereeSession?.startedAt || match.refereeSession?.confirmedAt) {
+      return { ok: false, message: "El partido ya tiene actividad arbitral. No se puede reprogramar." };
+    }
+    if (!data.date || !data.time) return { ok: false, message: "Indica una fecha y hora válidas." };
+    match.date = data.date;
+    match.time = data.time;
+    match.pitch = data.pitch || match.pitch || "Cancha Principal IMEX";
+    match.notes = data.notes || "";
+    match.status = "scheduled";
+    this.addActivity("match", `Se reprogramó ${this.team(match.homeTeamId)?.name || "TBD"} vs ${this.team(match.awayTeamId)?.name || "TBD"} para ${match.date} a las ${match.time}.`);
+    this.save("match-reschedule");
+    return { ok: true, message: "Partido reprogramado." };
+  }
+
+  cancelMatch(matchId) {
+    const match = this.match(matchId);
+    if (!this.isAdmin()) return { ok: false, message: "Solo el organizador puede cancelar partidos." };
+    if (!match || match.status === "finished" || match.status === "cancelled") {
+      return { ok: false, message: "No se puede cancelar este partido." };
+    }
+    if (match.refereeSession?.startedAt || match.refereeSession?.confirmedAt) {
+      return { ok: false, message: "El partido ya tiene actividad arbitral. No se puede cancelar." };
+    }
+    match.status = "cancelled";
+    this.addActivity("match", `Se canceló ${this.team(match.homeTeamId)?.name || "TBD"} vs ${this.team(match.awayTeamId)?.name || "TBD"}.`);
+    this.save("match-cancel");
+    return { ok: true, message: "Partido cancelado." };
   }
 
   executeClausulazo(playerId, buyerTeamId) {

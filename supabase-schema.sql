@@ -106,8 +106,42 @@ create policy "app_state: lectura pública"
   to anon, authenticated
   using (true);
 
--- Escritura para usuarios autenticados. Para producción, mueve las mutaciones
--- a una Edge Function con validación de rol (ADMIN / PRESIDENT).
+-- La plataforma de arbitraje usa el código compartido VARDRID, no cuentas Supabase.
+-- Por ello, el navegador opera como rol anon. Estas políticas permiten sincronizar
+-- la fila única de la liga desde todos los dispositivos.
+--
+-- IMPORTANTE: un código compartido en el frontend NO es autenticación fuerte.
+-- Cualquier persona que conozca el código o inspeccione el sitio podría escribir
+-- en app_state. Para una liga de prueba interna puede ser suficiente; para datos
+-- oficiales sensibles, sustituye esto por una Edge Function con validación server-side.
+drop policy if exists "app_state: escritura anon" on public.app_state;
+create policy "app_state: escritura anon"
+  on public.app_state for insert
+  to anon
+  with check (id = 'main');
+
+drop policy if exists "app_state: actualización anon" on public.app_state;
+create policy "app_state: actualización anon"
+  on public.app_state for update
+  to anon
+  using (id = 'main')
+  with check (id = 'main');
+
+-- Se mantienen los permisos de escritura de usuarios autenticados.
+drop policy if exists "app_state: escritura autenticada" on public.app_state;
+create policy "app_state: escritura autenticada"
+  on public.app_state for insert
+  to authenticated
+  with check (true);
+
+drop policy if exists "app_state: actualización autenticada" on public.app_state;
+create policy "app_state: actualización autenticada"
+  on public.app_state for update
+  to authenticated
+  using (true)
+  with check (true);
+
+grant select, insert, update on public.app_state to anon, authenticated;
 drop policy if exists "app_state: escritura autenticada" on public.app_state;
 create policy "app_state: escritura autenticada"
   on public.app_state for insert

@@ -114,6 +114,8 @@ class Store {
     this.remoteError = "";
     this.saving = false;
     this.saveTimer = 0;
+    this.syncPromise = Promise.resolve();
+    this.syncStatus = "disconnected";
   }
 
   async init() {
@@ -1526,21 +1528,32 @@ class Store {
       this.supabase = window.supabase.createClient(config.url, config.key, {
         auth: { persistSession: true, autoRefreshToken: true }
       });
+      const leagueId = window.IMEX_CONFIG?.leagueId || "main";
       const { data, error } = await this.supabase
         .from(SUPABASE_TABLE)
         .select("payload, updated_at")
-        .eq("id", window.IMEX_CONFIG?.leagueId || "main")
+        .eq("id", leagueId)
         .maybeSingle();
       if (error) throw error;
-     if (data?.payload) {
-  const remote = this.normalize(data.payload);
-  this.state = remote;
-}
+
+      // La fila vacía inicial no debe reemplazar los datos locales de la liga.
+      if (data?.payload && Object.keys(data.payload).length > 0) {
+        this.state = this.normalize(data.payload);
+      }
+
       this.remoteReady = true;
+      this.remoteError = "";
+      this.syncStatus = "connected";
       this.subscribeRemote();
+
+      // Si todavía no existe estado compartido, publica el estado inicial de esta liga.
+      if (!data?.payload || Object.keys(data.payload).length === 0) {
+        await this.persistRemote();
+      }
     } catch (error) {
       this.remoteError = error.message || "No se pudo conectar con Supabase.";
       this.remoteReady = false;
+      this.syncStatus = "error";
       console.warn("Supabase:", this.remoteError);
     }
   }
@@ -1549,25 +1562,54 @@ class Store {
     if (!this.supabase) return;
     this.supabase
       .channel("imex-league-state")
-      .on("postgres_changes", { event: "*", schema: "public", table: SUPABASE_TABLE, filter: `id=eq.${window.IMEX_CONFIG?.leagueId || "main"}` }, (payload) => {
-        const remote = payload.new?.payload;
+      .on("postgres_changes", {
+        event: "*",
+        schema: "public",
+        table: SUPABASE_TABLE,
+        filter: `id=eq.${window.IMEX_CONFIG?.leagueId || "main"}`
+      }, (change) => {
+        const remote = change.new?.payload;
         if (!remote || remote._clientId === this.clientId) return;
-        if (new Date(remote.updatedAt).getTime() > new Date(this.state.updatedAt).getTime()) {
+        const remoteTime = new Date(remote.updatedAt || change.new?.updated_at || 0).getTime();
+        const localTime = new Date(this.state.updatedAt || 0).getTime();
+        if (remoteTime > localTime) {
           this.state = this.normalize(remote);
+          this.syncStatus = "connected";
+          this.remoteError = "";
+          try {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(this.state));
+          } catch { /* El estado remoto sigue disponible aunque falle la caché local. */ }
           this.notify();
         }
       })
-      .subscribe();
+      .subscribe((status) => {
+        if (status === "SUBSCRIBED") {
+          this.syncStatus = "connected";
+          this.remoteError = "";
+        } else if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") {
+          this.syncStatus = "error";
+          this.remoteError = "Se perdió la conexión en tiempo real con Supabase.";
+        }
+        this.notify();
+      });
   }
 
   queueRemoteSave() {
     if (!this.supabase || !this.remoteReady) return;
     clearTimeout(this.saveTimer);
-    this.saveTimer = setTimeout(() => this.persistRemote(), 450);
+    this.saveTimer = setTimeout(() => {
+      this.syncPromise = this.syncPromise
+        .then(() => this.persistRemote())
+        .catch((error) => {
+          this.remoteError = error.message || "No se pudo sincronizar con Supabase.";
+          this.syncStatus = "error";
+          this.notify();
+        });
+    }, 450);
   }
 
   async persistRemote() {
-    if (!this.supabase || !this.remoteReady) return;
+    if (!this.supabase || !this.remoteReady) return false;
     const payload = { ...this.state, accounts: [], _clientId: this.clientId };
     const { error } = await this.supabase.from(SUPABASE_TABLE).upsert({
       id: window.IMEX_CONFIG?.leagueId || "main",
@@ -1575,9 +1617,15 @@ class Store {
       updated_at: new Date().toISOString()
     });
     if (error) {
-      this.remoteError = error.message;
+      this.remoteError = error.message || "No se pudo guardar en Supabase.";
+      this.syncStatus = "error";
       console.warn("Supabase save:", error.message);
+      this.notify();
+      return false;
     }
+    this.remoteError = "";
+    this.syncStatus = "connected";
+    return true;
   }
 
   configureSupabase(url, key) {

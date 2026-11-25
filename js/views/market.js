@@ -244,7 +244,7 @@ export default {
       </section>` : ""}
 
       <section class="panel" style="margin-top:20px">
-        <div class="panel__head"><div><h3>Reglas del mercado</h3><p>Clausulazos, ofertas e intercambios</p></div>${store.isAdmin() ? `<button class="btn btn--ghost btn--sm" type="button" data-reset-clausulazos>${icon("sync", 14)} Reiniciar clausulazos</button>` : ""}</div>
+        <div class="panel__head"><div><h3>Reglas del mercado</h3><p>Clausulazos, ofertas e intercambios</p></div></div>
         <div class="grid grid--2">
           <div><p class="eyebrow">Límite de movimientos</p><p class="small muted" style="margin-top:6px">Cada club dispone de cuatro movimientos durante la fase de grupos. El clausulazo cuenta como uno y solo se permite uno por club.</p></div>
           <div><p class="eyebrow">Equivalencia</p><p class="small muted" style="margin-top:6px">El efectivo y el valor de los jugadores incluidos deben sumar exactamente el valor del jugador solicitado.</p></div>
@@ -258,17 +258,6 @@ export default {
     root.querySelector("[data-toggle-market]")?.addEventListener("click", () => {
       store.toggleMarket(!store.isMarketOpen());
       toast(store.isMarketOpen() ? "Mercado abierto." : "Mercado cerrado.", "success");
-    });
-    root.querySelector("[data-reset-clausulazos]")?.addEventListener("click", () => {
-      confirmDialog({
-        title: "Reiniciar clausulazos",
-        message: "Todos los clubes podrán volver a usar un clausulazo en este mercado. ¿Continuar?",
-        confirmLabel: "Reiniciar",
-        onConfirm: () => {
-          store.resetClausulazos();
-          toast("Clausulazos reiniciados.", "success");
-        }
-      });
     });
     root.querySelectorAll("[data-clausulazo]").forEach((button) => {
       button.addEventListener("click", () => {

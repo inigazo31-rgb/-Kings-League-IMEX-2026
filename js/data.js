@@ -10,8 +10,8 @@ export const LEAGUE = {
   logoUrl: "",
   budget: 200,
   winReward: 50,
-  drawReward: 10,
-  qualificationReward: 50,
+  drawReward: 15,
+  qualificationReward: 0,
   marketOverride: null,
   marketClosesAt: "2026-10-21T20:00:00-06:00",
   fantasyBudget: 210

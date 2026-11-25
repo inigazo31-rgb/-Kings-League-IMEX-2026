@@ -269,11 +269,9 @@ function leagueTab() {
           ${field({ label: "Lema", name: "tagline", value: league.tagline })}
           ${field({ label: "Sede", name: "venue", value: league.venue })}
           ${field({ label: "Formato", name: "format", value: league.format })}
-          ${field({ label: "Premio por victoria (M)", name: "winReward", type: "number", value: league.winReward, min: 0, max: 9999 })}
-          ${field({ label: "Premio por empate (M)", name: "drawReward", type: "number", value: league.drawReward, min: 0, max: 9999 })}
-          ${field({ label: "Premio por clasificar (M)", name: "qualificationReward", type: "number", value: league.qualificationReward, min: 0, max: 9999 })}
+          <div class="field field--full"><label>Premios oficiales por partido</label><p class="field__hint">Victoria: +50 M · Derrota: -10 M · Empate: ganador de penaltis +35 M y perdedor +15 M. Estos importes están fijados por el reglamento.</p></div>
+          <div class="field field--full"><label>Horario oficial del mercado</label><p class="field__hint">Miércoles hasta las 22:00 h (hora de México). El cierre está fijado por el reglamento.</p></div>
           ${field({ label: "Saldo inicial Fantasy (M)", name: "fantasyBudget", type: "number", value: league.fantasyBudget, min: 0, max: 9999 })}
-          ${field({ label: "Cierre del mercado", name: "marketClosesAt", type: "datetime-local", value: String(league.marketClosesAt || "").slice(0, 16), full: true })}
         </div>
         <div class="form-actions"><button class="btn btn--primary" type="submit">Guardar configuración</button></div>
       </form>
@@ -724,11 +722,10 @@ export default {
         tagline: values.tagline,
         venue: values.venue,
         format: values.format,
-        winReward: Number(values.winReward),
-        drawReward: Number(values.drawReward),
-        qualificationReward: Number(values.qualificationReward),
-        fantasyBudget: Number(values.fantasyBudget),
-        marketClosesAt: values.marketClosesAt ? `${values.marketClosesAt}:00-06:00` : store.state.league.marketClosesAt
+        winReward: 50,
+        drawReward: 15,
+        qualificationReward: 0,
+        fantasyBudget: Number(values.fantasyBudget)
       });
       toast("Configuración de liga guardada.", "success");
     });

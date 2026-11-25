@@ -255,17 +255,17 @@ export function openMatchResult(match, onDone) {
   openModal({
     title: match.settled ? "Editar resultado" : "Registrar resultado",
     eyebrow: `${match.title || `Jornada ${match.matchday}`} · ${fmtDate(match.date)}`,
-    size: "md",
+    size: "lg",
     body: `<form data-result-form>
       <div class="form-grid">
-        ${field({ label: `${home.name} · goles`, name: "homeScore", type: "number", value: match.homeScore ?? 0, min: 0, max: 99, required: true })}
-        ${field({ label: `${away.name} · goles`, name: "awayScore", type: "number", value: match.awayScore ?? 0, min: 0, max: 99, required: true })}
+        ${field({ label: `${home.name} · goles normales`, name: "homeScore", type: "number", value: Math.max(0, (match.homeScore ?? 0) - 2 * (special.home?.double || 0) - (special.home?.presidentPenalty || 0)), min: 0, max: 99, required: true })}
+        ${field({ label: `${away.name} · goles normales`, name: "awayScore", type: "number", value: Math.max(0, (match.awayScore ?? 0) - 2 * (special.away?.double || 0) - (special.away?.presidentPenalty || 0)), min: 0, max: 99, required: true })}
         ${field({ label: "MVP del partido", name: "mvpPlayerId", type: "select", value: match.mvpPlayerId || "", options: mvpOptions, full: true })}
         ${field({ label: "Ganador de tanda de penaltis (solo si hay empate)", name: "penaltyWinnerTeamId", type: "select", value: match.penaltyWinnerTeamId || "", options: [{ value: "", label: "No aplica / seleccionar si empatan" }, { value: home.id, label: home.name }, { value: away.id, label: away.name }], full: true })}
         ${field({ label: "Notas del partido", name: "notes", type: "textarea", value: match.notes || "", full: true, rows: 3, placeholder: "Resumen, incidencias o cartas usadas." })}
       </div>
       <h4 style="margin-top:20px">Goles especiales</h4>
-      <p class="modal-copy" style="margin-bottom:10px">Estos goles también forman parte del marcador total. El gol x2 suma dos tantos; el penal del presidente suma uno.</p>
+      <p class="modal-copy" style="margin-bottom:10px">El marcador final se calcula automáticamente: cada gol normal suma uno, el gol x2 suma dos y el penal del presidente suma uno.</p>
       <div class="form-grid">
         ${field({ label: `${home.name} · Gol x2 (cantidad)`, name: "homeDoubleGoals", type: "number", value: special.home?.double ?? specialCount(home.id, "goal_x2"), min: 0, max: 20 })}
         ${field({ label: `${away.name} · Gol x2 (cantidad)`, name: "awayDoubleGoals", type: "number", value: special.away?.double ?? specialCount(away.id, "goal_x2"), min: 0, max: 20 })}

@@ -872,6 +872,10 @@ class Store {
     match.homeScore = homeScore;
     match.awayScore = awayScore;
     match.mvpPlayerId = payload.mvpPlayerId || null;
+    match.specialGoals = {
+      home: { double: Math.max(0, Number(payload.homeDoubleGoals) || 0), presidentPenalty: Math.max(0, Number(payload.homePresidentPenaltyGoals) || 0) },
+      away: { double: Math.max(0, Number(payload.awayDoubleGoals) || 0), presidentPenalty: Math.max(0, Number(payload.awayPresidentPenaltyGoals) || 0) }
+    };
     match.notes = payload.notes ?? match.notes;
     match.status = "finished";
     match.settled = true;
@@ -891,8 +895,12 @@ class Store {
     } else if (homeScore < awayScore) {
       awayReward = this.state.league.winReward;
     } else {
-      homeReward = this.state.league.drawReward;
-      awayReward = this.state.league.drawReward;
+      const penaltyWinner = payload.penaltyWinnerTeamId;
+      if (![home.id, away.id].includes(penaltyWinner)) {
+        return { ok: false, message: "En caso de empate, selecciona al ganador de la tanda de penaltis." };
+      }
+      homeReward = penaltyWinner === home.id ? 35 : 15;
+      awayReward = penaltyWinner === away.id ? 35 : 15;
     }
     // Semifinal: cada club que la juega cobra 50 M, además del resultado.
     if (match.phase === "semifinals") {
@@ -1076,21 +1084,22 @@ class Store {
     return { ok: true, message: "Oferta aceptada y plantillas actualizadas." };
   }
 
-  // Mercado: sin ajuste manual (marketOverride null) está abierto solo los miércoles (hora de México, UTC-6).
-  // El organizador puede forzarlo a abierto (true) o cerrado (false), o volver a automático (null).
+  // Mercado automático: miércoles de 00:00 a 21:59:59, hora de México (UTC-6).
   isMarketOpen(now = new Date()) {
     const override = this.state.league.marketOverride;
     if (typeof override === "boolean") return override;
     const mexicoTime = new Date(now.getTime() - 6 * 60 * 60 * 1000);
-    return mexicoTime.getUTCDay() === 3;
+    return mexicoTime.getUTCDay() === 3 && mexicoTime.getUTCHours() < 22;
   }
 
-  // Fecha de cierre visible: en automático, medianoche del miércoles (hora de México); si el organizador fuerza, marketClosesAt.
+  // Próximo cierre: miércoles a las 22:00, hora de México (UTC-6).
   marketCloseAt(now = new Date()) {
-    if (typeof this.state.league.marketOverride === "boolean") return this.state.league.marketClosesAt;
+    if (typeof this.state.league.marketOverride === "boolean" && this.state.league.marketClosesAt) return this.state.league.marketClosesAt;
     const mexicoTime = new Date(now.getTime() - 6 * 60 * 60 * 1000);
-    const midnightMexico = new Date(Date.UTC(mexicoTime.getUTCFullYear(), mexicoTime.getUTCMonth(), mexicoTime.getUTCDate() + 1, 6, 0, 0));
-    return midnightMexico.toISOString();
+    const daysUntilWednesday = (3 - mexicoTime.getUTCDay() + 7) % 7;
+    let close = new Date(Date.UTC(mexicoTime.getUTCFullYear(), mexicoTime.getUTCMonth(), mexicoTime.getUTCDate() + daysUntilWednesday, 22, 0, 0));
+    if (close <= mexicoTime) close = new Date(close.getTime() + 7 * 86400000);
+    return new Date(close.getTime() + 6 * 60 * 60 * 1000).toISOString();
   }
 
   toggleMarket(override, closesAt) {

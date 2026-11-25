@@ -1542,7 +1542,7 @@ class Store {
         this.state = this.normalize(data.payload);
         this.remoteUpdatedAt = data.updated_at || null;
       } else {
-        this.remoteUpdatedAt = null;
+        this.remoteUpdatedAt = data?.updated_at || null;
       }
 
       this.remoteReady = true;

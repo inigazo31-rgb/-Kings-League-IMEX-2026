@@ -848,8 +848,17 @@ class Store {
   recordResult(matchId, payload) {
     const match = this.match(matchId);
     if (!match) return { ok: false, message: "Partido no encontrado." };
-    const homeScore = Number(payload.homeScore);
-    const awayScore = Number(payload.awayScore);
+    const homeRegularScore = Number(payload.homeScore);
+    const awayRegularScore = Number(payload.awayScore);
+    const homeDoubleGoals = Number(payload.homeDoubleGoals) || 0;
+    const awayDoubleGoals = Number(payload.awayDoubleGoals) || 0;
+    const homePresidentPenaltyGoals = Number(payload.homePresidentPenaltyGoals) || 0;
+    const awayPresidentPenaltyGoals = Number(payload.awayPresidentPenaltyGoals) || 0;
+    if (![homeRegularScore, awayRegularScore, homeDoubleGoals, awayDoubleGoals, homePresidentPenaltyGoals, awayPresidentPenaltyGoals].every((value) => Number.isInteger(value) && value >= 0)) {
+      return { ok: false, message: "Los goles y cantidades especiales deben ser números enteros no negativos." };
+    }
+    const homeScore = homeRegularScore + homeDoubleGoals * 2 + homePresidentPenaltyGoals;
+    const awayScore = awayRegularScore + awayDoubleGoals * 2 + awayPresidentPenaltyGoals;
     if (!Number.isInteger(homeScore) || !Number.isInteger(awayScore) || homeScore < 0 || awayScore < 0) {
       return { ok: false, message: "Introduce un marcador válido." };
     }
@@ -876,8 +885,8 @@ class Store {
     match.mvpPlayerId = payload.mvpPlayerId || null;
     match.penaltyWinnerTeamId = homeScore === awayScore ? payload.penaltyWinnerTeamId : null;
     match.specialGoals = {
-      home: { double: Math.max(0, Number(payload.homeDoubleGoals) || 0), presidentPenalty: Math.max(0, Number(payload.homePresidentPenaltyGoals) || 0) },
-      away: { double: Math.max(0, Number(payload.awayDoubleGoals) || 0), presidentPenalty: Math.max(0, Number(payload.awayPresidentPenaltyGoals) || 0) }
+      home: { double: homeDoubleGoals, presidentPenalty: homePresidentPenaltyGoals },
+      away: { double: awayDoubleGoals, presidentPenalty: awayPresidentPenaltyGoals }
     };
     match.notes = payload.notes ?? match.notes;
     match.status = "finished";

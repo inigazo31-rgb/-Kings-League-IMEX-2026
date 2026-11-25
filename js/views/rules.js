@@ -75,7 +75,7 @@ export default {
           <div class="panel__head"><div><h3>Premios y sanciones</h3><p>Incentivos oficiales</p></div></div>
           <div class="detail-list">
             <div class="detail-list__row"><span>Victoria</span><strong>+50 M</strong></div>
-            <div class="detail-list__row"><span>Derrota</span><strong>-10 M</strong></div>
+            <div class="detail-list__row"><span>Derrota</span><strong>+10 M</strong></div>
             <div class="detail-list__row"><span>Empate · ganador de penaltis</span><strong>+35 M</strong></div>
             <div class="detail-list__row"><span>Empate · perdedor de penaltis</span><strong>+15 M</strong></div>
             <div class="detail-list__row"><span>Cierre del mercado</span><strong>Miércoles · 22:00 h</strong></div>

@@ -113,6 +113,8 @@ function eventTitle(event) {
   const team = store.team(event.teamId);
   const player = store.player(event.playerId);
   if (event.type === "goal") return `Gol · ${player?.name || "Jugador"} (${team?.short || ""})`;
+  if (event.type === "goal_x2") return `Gol x2 · ${player?.name || "Jugador"} (${team?.short || ""})`;
+  if (event.type === "president_penalty") return `Gol de penal del presidente · ${event.presidentName || team?.name || ""}`;
   if (event.type === "yellow") return `Tarjeta amarilla · ${player?.name || "Jugador"}`;
   if (event.type === "red") return `Tarjeta roja · ${player?.name || "Jugador"}`;
   if (event.type === "substitution") return `Cambio · ${store.player(event.playerOutId)?.name || "—"} por ${store.player(event.playerInId)?.name || "—"}`;
@@ -131,7 +133,7 @@ function timeline(session) {
 function actaView(match, session, confirmed = false) {
   const home = store.team(match.homeTeamId);
   const away = store.team(match.awayTeamId);
-  const goals = (session.events || []).filter((event) => event.type === "goal").length;
+  const goals = (session.events || []).filter((event) => ["goal", "goal_x2", "president_penalty"].includes(event.type)).length;
   const yellows = (session.events || []).filter((event) => event.type === "yellow").length;
   const reds = (session.events || []).filter((event) => event.type === "red").length;
   const subs = (session.events || []).filter((event) => event.type === "substitution").length;
@@ -180,6 +182,8 @@ function controlView(match, session) {
       <button class="referee-action referee-action--red" type="button" data-card="red"><span class="referee-card-icon"></span><strong>Roja</strong></button>
       <button class="referee-action" type="button" data-event="substitution">${icon("arrow-left-right", 23)}<strong>Cambio</strong></button>
       <button class="referee-action" type="button" data-event="goal">${icon("goal", 23)}<strong>Gol</strong></button>
+      <button class="referee-action" type="button" data-event="goal_x2">${icon("zap", 23)}<strong>Gol x2</strong></button>
+      <button class="referee-action" type="button" data-event="president_penalty">${icon("goal", 23)}<strong>Penal presidente</strong></button>
     </div></section>` : ""}
     <section class="panel"><div class="panel__head"><div><p class="eyebrow">REGISTRO EN VIVO</p><h3>Línea del tiempo</h3></div><span class="pill pill--outline">${session.events.length} incidencias</span></div>${timeline(session)}</section>
     ${!finished && session.startedAt ? `<div class="referee-finish"><button class="btn btn--danger" type="button" data-finish>Finalizar partido</button></div>` : ""}
@@ -205,7 +209,7 @@ function eventPicker(root, match, session, type) {
     <button class="referee-modal-close" type="button" data-event-cancel aria-label="Cerrar">×</button>
     <p class="eyebrow">NUEVA INCIDENCIA</p><h2>${type === "goal" ? "Registrar gol" : isChange ? "Registrar cambio" : type === "yellow" ? "Tarjeta amarilla" : "Tarjeta roja"}</h2>
     <label class="field"><span>Equipo</span><select name="teamId" required><option value="">Seleccionar equipo</option>${teamOptions.map((t) => `<option value="${esc(t.id)}">${esc(t.name)}</option>`).join("")}</select></label>
-    ${isChange ? `<label class="field"><span>Jugador que sale</span><select name="playerOutId" required disabled><option value="">Selecciona equipo primero</option></select></label><label class="field"><span>Jugador que entra</span><select name="playerInId" required disabled><option value="">Selecciona equipo primero</option></select></label>` : `<label class="field"><span>Jugador</span><select name="playerId" required disabled><option value="">Selecciona equipo primero</option></select></label>`}
+    ${isChange ? `<label class="field"><span>Jugador que sale</span><select name="playerOutId" required disabled><option value="">Selecciona equipo primero</option></select></label><label class="field"><span>Jugador que entra</span><select name="playerInId" required disabled><option value="">Selecciona equipo primero</option></select></label>` : type === "president_penalty" ? `<label class="field"><span>Nombre del presidente</span><input name="presidentName" maxlength="80" placeholder="Nombre del presidente" required></label>` : `<label class="field"><span>Jugador</span><select name="playerId" required disabled><option value="">Selecciona equipo primero</option></select></label>`}
     <div class="referee-modal-actions"><button class="btn btn--ghost" type="button" data-event-cancel>Cancelar</button><button class="btn btn--primary" type="submit">Registrar</button></div>
   </form></div>`;
   const form = modalRoot.querySelector("form");
@@ -239,6 +243,10 @@ function eventPicker(root, match, session, type) {
       session.activePlayerIds[teamId] = (session.activePlayerIds[teamId] || []).filter((id) => id !== playerOutId).concat(playerInId);
       session.substitutionsUsed += 1;
       session.events.push({ id: crypto.randomUUID(), type, teamId, playerOutId, playerInId, ...stamp, at: Date.now() });
+    } else if (isPresidentPenalty) {
+      const presidentName = String(values.get("presidentName") || "").trim();
+      if (!presidentName) return;
+      session.events.push({ id: crypto.randomUUID(), type, teamId, presidentName, ...stamp, at: Date.now() });
     } else {
       const playerId = values.get("playerId");
       if (!playerId) return;

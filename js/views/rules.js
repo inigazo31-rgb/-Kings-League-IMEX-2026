@@ -7,7 +7,7 @@ const RULES = [
   { icon: "clock", title: "Dos tiempos", copy: "Partidos de 60 minutos divididos en dos tiempos de 30. El reloj no se detiene salvo lesión grave.", meta: ["Duración", "2 × 30 min"] },
   { icon: "card", title: "Cartas secretas", copy: "Cada club elige una carta antes del partido y la activa en el momento permitido. Solo una por equipo.", meta: ["Por partido", "1 carta"] },
   { icon: "target", title: "Dado IMEX", copy: "En el minuto 18 se lanza el dado. El resultado modifica temporalmente el formato y el número de jugadores.", meta: ["Minuto", "18"] },
-  { icon: "transfer", title: "Mercado", copy: "Un clausulazo por club y ventana. Los jugadores insignia están blindados y no pueden salir.", meta: ["Cláusula", "Valor del jugador"] },
+  { icon: "transfer", title: "Mercado", copy: "Cada club dispone de cuatro movimientos durante la fase de grupos; uno puede ser clausulazo. Los tratos deben ser equivalentes al valor de los jugadores involucrados.", meta: ["Movimientos", "4 por club"] },
   { icon: "star", title: "Fantasy", copy: "Cada persona empieza con 210 M y ficha 5 jugadores (1 POR, 1 DEF, 1 MED, 2 DEL). Puntúan minutos, goles, porterías a cero, valoración y tarjetas, con capitán x2 y bonus por jornada. El clausulazo cuesta el valor de la carta y no entrega jugador a cambio; el dueño debe cubrir el hueco antes de que cierre el mercado.", meta: ["Saldo", money(store.fantasyStartBalance())] }
 ];
 
@@ -74,9 +74,11 @@ export default {
         <section class="panel">
           <div class="panel__head"><div><h3>Premios y sanciones</h3><p>Incentivos oficiales</p></div></div>
           <div class="detail-list">
-            <div class="detail-list__row"><span>Victoria</span><strong>${money(store.state.league.winReward)}</strong></div>
-            <div class="detail-list__row"><span>Empate</span><strong>${money(store.state.league.drawReward)}</strong></div>
-            <div class="detail-list__row"><span>Clasificación a semifinales</span><strong>${money(store.state.league.qualificationReward)}</strong></div>
+            <div class="detail-list__row"><span>Victoria</span><strong>+50 M</strong></div>
+            <div class="detail-list__row"><span>Derrota</span><strong>-10 M</strong></div>
+            <div class="detail-list__row"><span>Empate · ganador de penaltis</span><strong>+35 M</strong></div>
+            <div class="detail-list__row"><span>Empate · perdedor de penaltis</span><strong>+15 M</strong></div>
+            <div class="detail-list__row"><span>Cierre del mercado</span><strong>Miércoles · 22:00 h</strong></div>
             <div class="detail-list__row"><span>Amarilla</span><strong>Sin sanción económica</strong></div>
             <div class="detail-list__row"><span>Roja directa</span><strong>1 partido de suspensión</strong></div>
             <div class="detail-list__row"><span>Impago de cláusula</span><strong>Operación anulada</strong></div>

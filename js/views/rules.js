@@ -8,6 +8,7 @@ const RULES = [
   { icon: "card", title: "Cartas secretas", copy: "Cada club elige una carta antes del partido y la activa en el momento permitido. Solo una por equipo.", meta: ["Por partido", "1 carta"] },
   { icon: "target", title: "Dado IMEX", copy: "En el minuto 18 se lanza el dado. El resultado modifica temporalmente el formato y el número de jugadores.", meta: ["Minuto", "18"] },
   { icon: "transfer", title: "Mercado", copy: "Cada club dispone de cuatro movimientos durante la fase de grupos; uno puede ser clausulazo. Los tratos deben ser equivalentes al valor de los jugadores involucrados. Cada presidente debe velar por la integridad y competitividad del club; el comité podrá tomar medidas ante acuerdos que perjudiquen o beneficien indebidamente a un equipo.", meta: ["Movimientos", "4 por club"] },
+  { icon: "zap", title: "Goles especiales", copy: "El gol x2 suma dos tantos al marcador. El gol de penal del presidente suma un tanto y debe quedar registrado en el acta arbitral y en el resultado oficial.", meta: ["Opciones", "Gol x2 · Penal presidente"] },
   { icon: "star", title: "Fantasy", copy: "Cada persona empieza con 210 M y ficha 5 jugadores (1 POR, 1 DEF, 1 MED, 2 DEL). Puntúan minutos, goles, porterías a cero, valoración y tarjetas, con capitán x2 y bonus por jornada. El clausulazo cuesta el valor de la carta y no entrega jugador a cambio; el dueño debe cubrir el hueco antes de que cierre el mercado.", meta: ["Saldo", money(store.fantasyStartBalance())] }
 ];
 

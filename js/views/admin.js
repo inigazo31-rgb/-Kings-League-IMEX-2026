@@ -269,7 +269,7 @@ function leagueTab() {
           ${field({ label: "Lema", name: "tagline", value: league.tagline })}
           ${field({ label: "Sede", name: "venue", value: league.venue })}
           ${field({ label: "Formato", name: "format", value: league.format })}
-          <div class="field field--full"><label>Premios oficiales por partido</label><p class="field__hint">Victoria: +50 M · Derrota: -10 M · Empate: ganador de penaltis +35 M y perdedor +15 M. Estos importes están fijados por el reglamento.</p></div>
+          <div class="field field--full"><label>Premios oficiales por partido</label><p class="field__hint">Victoria: +50 M · Derrota: +10 M · Empate: ganador de penaltis +35 M y perdedor +15 M. Estos importes están fijados por el reglamento.</p></div>
           <div class="field field--full"><label>Horario oficial del mercado</label><p class="field__hint">Miércoles hasta las 22:00 h (hora de México). El cierre está fijado por el reglamento.</p></div>
           ${field({ label: "Saldo inicial Fantasy (M)", name: "fantasyBudget", type: "number", value: league.fantasyBudget, min: 0, max: 9999 })}
         </div>

@@ -238,9 +238,10 @@ export default {
 
       <section class="panel" style="margin-top:20px">
         <div class="panel__head"><div><h3>Reglas del mercado</h3><p>Clausulazos, ofertas e intercambios</p></div>${store.isAdmin() ? `<button class="btn btn--ghost btn--sm" type="button" data-reset-clausulazos>${icon("sync", 14)} Reiniciar clausulazos</button>` : ""}</div>
-        <div class="grid grid--3">
-          <div><p class="eyebrow">Clausulazo</p><p class="small muted" style="margin-top:6px">Pagas el valor del jugador y se incorpora de inmediato. Cuenta como uno de los cuatro movimientos y solo puedes usar un clausulazo.</p></div>
-          <div><p class="eyebrow">Oferta</p><p class="small muted" style="margin-top:6px">Propón efectivo, un jugador o ambos. El club vendedor acepta o rechaza desde su panel.</p></div>
+        <div class="grid grid--2">
+          <div><p class="eyebrow">Límite de movimientos</p><p class="small muted" style="margin-top:6px">Cada club dispone de cuatro movimientos durante la fase de grupos. El clausulazo cuenta como uno y solo se permite uno por club.</p></div>
+          <div><p class="eyebrow">Equivalencia</p><p class="small muted" style="margin-top:6px">El efectivo y el valor de los jugadores incluidos deben sumar exactamente el valor del jugador solicitado.</p></div>
+          <div><p class="eyebrow">Cierre</p><p class="small muted" style="margin-top:6px">El mercado cierra todos los miércoles a las 22:00 h, hora de México.</p></div>
           <div><p class="eyebrow">Blindaje</p><p class="small muted" style="margin-top:6px">Los jugadores insignia no pueden salir por clausulazo ni entrar en negociaciones.</p></div>
         </div>
       </section>

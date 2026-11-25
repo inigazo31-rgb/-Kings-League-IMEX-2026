@@ -1090,7 +1090,6 @@ class Store {
     if (Number(buyer.balance) < Number(transfer.price)) return { ok: false, message: "El comprador ya no tiene saldo suficiente." };
     buyer.balance -= Number(transfer.price) || 0;
     seller.balance += Number(transfer.price) || 0;
-    const offered = (transfer.offeredPlayerIds || []).map((id) => this.player(id)).filter(Boolean);
     for (const item of offered) {
       if (item.teamId === buyer.id) item.teamId = seller.id;
     }

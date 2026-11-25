@@ -267,10 +267,10 @@ export function openMatchResult(match, onDone) {
       <h4 style="margin-top:20px">Goles especiales</h4>
       <p class="modal-copy" style="margin-bottom:10px">El marcador final se calcula automáticamente: cada gol normal suma uno, el gol x2 suma dos y el penal del presidente suma uno.</p>
       <div class="form-grid">
-        ${field({ label: `${home.name} · Gol x2 (cantidad)`, name: "homeDoubleGoals", type: "number", value: special.home?.double ?? specialCount(home.id, "goal_x2"), min: 0, max: 20 })}
-        ${field({ label: `${away.name} · Gol x2 (cantidad)`, name: "awayDoubleGoals", type: "number", value: special.away?.double ?? specialCount(away.id, "goal_x2"), min: 0, max: 20 })}
-        ${field({ label: `${home.name} · Penal presidente (cantidad)`, name: "homePresidentPenaltyGoals", type: "number", value: special.home?.presidentPenalty ?? specialCount(home.id, "president_penalty"), min: 0, max: 20 })}
-        ${field({ label: `${away.name} · Penal presidente (cantidad)`, name: "awayPresidentPenaltyGoals", type: "number", value: special.away?.presidentPenalty ?? specialCount(away.id, "president_penalty"), min: 0, max: 20 })}
+        ${field({ label: `${home.name} · Gol x2 (cantidad)`, name: "homeDoubleGoals", type: "number", value: Math.max(Number(special.home?.double) || 0, specialCount(home.id, "goal_x2")), min: 0, max: 20 })}
+        ${field({ label: `${away.name} · Gol x2 (cantidad)`, name: "awayDoubleGoals", type: "number", value: Math.max(Number(special.away?.double) || 0, specialCount(away.id, "goal_x2")), min: 0, max: 20 })}
+        ${field({ label: `${home.name} · Penal presidente (cantidad)`, name: "homePresidentPenaltyGoals", type: "number", value: Math.max(Number(special.home?.presidentPenalty) || 0, specialCount(home.id, "president_penalty")), min: 0, max: 20 })}
+        ${field({ label: `${away.name} · Penal presidente (cantidad)`, name: "awayPresidentPenaltyGoals", type: "number", value: Math.max(Number(special.away?.presidentPenalty) || 0, specialCount(away.id, "president_penalty")), min: 0, max: 20 })}
       </div>
       <h4 style="margin-top:20px">Ficha por jugador</h4>
       <p class="modal-copy" style="margin-bottom:10px">Marca minutos, goles normales, portería a cero, tarjetas y calificación (1–10). Los goles especiales se registran arriba. Vacío = no jugó.</p>

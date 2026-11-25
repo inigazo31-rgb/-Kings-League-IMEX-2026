@@ -205,6 +205,7 @@ function eventPicker(root, match, session, type) {
     return list.map((p) => `<option value="${esc(p.id)}">${esc(p.number ?? "—")} · ${esc(p.name)}</option>`).join("");
   };
   const isChange = type === "substitution";
+  const isPresidentPenalty = type === "president_penalty";
   modalRoot.innerHTML = `<div class="referee-modal-backdrop" data-event-backdrop><form class="referee-event-modal panel" data-event-form>
     <button class="referee-modal-close" type="button" data-event-cancel aria-label="Cerrar">×</button>
     <p class="eyebrow">NUEVA INCIDENCIA</p><h2>${type === "goal" ? "Registrar gol" : type === "goal_x2" ? "Registrar gol x2" : isPresidentPenalty ? "Gol de penal del presidente" : isChange ? "Registrar cambio" : type === "yellow" ? "Tarjeta amarilla" : "Tarjeta roja"}</h2>

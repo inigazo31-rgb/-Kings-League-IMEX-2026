@@ -10,7 +10,6 @@ const SQUAD_BUDGET = 350;
 const FANTASY_SLOTS = { POR: 1, DEF: 1, MED: 1, DEL: 2 };
 const FANTASY_GOAL_POINTS = { POR: 7, DEF: 5, MED: 4, DEL: 3 };
 const FANTASY_CARD_INSIGNIA = 100;
-const SEMIFINAL_REWARD = 50;
 
 function roundClamp(value, min, max) {
   const number = Math.round(Number(value) || 0);
@@ -895,26 +894,23 @@ class Store {
     let homeReward = 0;
     let awayReward = 0;
     if (homeScore > awayScore) {
-      homeReward = this.state.league.winReward;
+      homeReward = 50;
+      awayReward = -10;
     } else if (homeScore < awayScore) {
-      awayReward = this.state.league.winReward;
+      homeReward = -10;
+      awayReward = 50;
     } else {
       const penaltyWinner = payload.penaltyWinnerTeamId;
       homeReward = penaltyWinner === home.id ? 35 : 15;
       awayReward = penaltyWinner === away.id ? 35 : 15;
-    }
-    // Semifinal: cada club que la juega cobra 50 M, además del resultado.
-    if (match.phase === "semifinals") {
-      homeReward += SEMIFINAL_REWARD;
-      awayReward += SEMIFINAL_REWARD;
     }
     homeReward += this.cardFines(stats, home.id);
     awayReward += this.cardFines(stats, away.id);
     home.balance += homeReward;
     away.balance += awayReward;
     match.rewards = { home: homeReward, away: awayReward };
-    this.addFinance(home.id, "income", `Resultado ${match.title || `Jornada ${match.matchday}`} vs ${away.name}`, homeReward);
-    this.addFinance(away.id, "income", `Resultado ${match.title || `Jornada ${match.matchday}`} vs ${home.name}`, awayReward);
+    this.addFinance(home.id, homeReward >= 0 ? "income" : "expense", `Resultado ${match.title || `Jornada ${match.matchday}`} vs ${away.name}`, Math.abs(homeReward));
+    this.addFinance(away.id, awayReward >= 0 ? "income" : "expense", `Resultado ${match.title || `Jornada ${match.matchday}`} vs ${home.name}`, Math.abs(awayReward));
     this.addActivity("result", `${home.name} ${homeScore}–${awayScore} ${away.name} · ${match.title || `Jornada ${match.matchday}`}`);
     this.save("result");
     return { ok: true };

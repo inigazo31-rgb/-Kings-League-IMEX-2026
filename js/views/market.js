@@ -150,7 +150,7 @@ export default {
         <div class="market-hero__side">
           <p class="eyebrow">${marketOpen ? "Cierra en" : "Estado"}</p>
           <span class="countdown">${marketOpen ? esc(countdown(store.marketCloseAt())) : "Cerrado"}</span>
-          <p class="small" style="color:rgba(243,241,235,.5);margin-top:8px">${esc(fmtDate(store.marketCloseAt().slice(0, 10)))} · medianoche (hora de México)</p>
+          <p class="small" style="color:rgba(243,241,235,.5);margin-top:8px">${esc(fmtDate(store.marketCloseAt().slice(0, 10)))} · miércoles, 22:00 h (hora de México)</p>
           <div style="margin-top:14px;padding-top:12px;border-top:1px solid rgba(243,241,235,.12)">
             <p class="eyebrow">Clausulazos disponibles</p>
             <strong style="font-family:var(--font-display);font-size:30px;letter-spacing:-.04em">${availableClausulazos}<span style="font-size:13px;color:rgba(243,241,235,.5)"> / ${store.state.teams.length} clubes</span></strong>
@@ -239,7 +239,7 @@ export default {
       <section class="panel" style="margin-top:20px">
         <div class="panel__head"><div><h3>Reglas del mercado</h3><p>Clausulazos, ofertas e intercambios</p></div>${store.isAdmin() ? `<button class="btn btn--ghost btn--sm" type="button" data-reset-clausulazos>${icon("sync", 14)} Reiniciar clausulazos</button>` : ""}</div>
         <div class="grid grid--3">
-          <div><p class="eyebrow">Clausulazo</p><p class="small muted" style="margin-top:6px">Pagas el valor del jugador y se incorpora de inmediato, sin negociación. Un uso por club y mercado.</p></div>
+          <div><p class="eyebrow">Clausulazo</p><p class="small muted" style="margin-top:6px">Pagas el valor del jugador y se incorpora de inmediato. Cuenta como uno de los cuatro movimientos y solo puedes usar un clausulazo.</p></div>
           <div><p class="eyebrow">Oferta</p><p class="small muted" style="margin-top:6px">Propón efectivo, un jugador o ambos. El club vendedor acepta o rechaza desde su panel.</p></div>
           <div><p class="eyebrow">Blindaje</p><p class="small muted" style="margin-top:6px">Los jugadores insignia no pueden salir por clausulazo ni entrar en negociaciones.</p></div>
         </div>

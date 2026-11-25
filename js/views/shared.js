@@ -242,6 +242,9 @@ export function openMatchResult(match, onDone) {
     toast("Asigna ambos clubes antes de registrar el resultado.", "danger");
     return;
   }
+  const refereeEvents = match.refereeSession?.events || [];
+  const specialCount = (teamId, type) => refereeEvents.filter((event) => event.teamId === teamId && event.type === type).length;
+  const special = match.specialGoals || {};
   const mvpOptions = [
     { value: "", label: "Sin MVP" },
     ...[...store.teamPlayers(home.id), ...store.teamPlayers(away.id)].map((player) => ({
@@ -258,10 +261,19 @@ export function openMatchResult(match, onDone) {
         ${field({ label: `${home.name} · goles`, name: "homeScore", type: "number", value: match.homeScore ?? 0, min: 0, max: 99, required: true })}
         ${field({ label: `${away.name} · goles`, name: "awayScore", type: "number", value: match.awayScore ?? 0, min: 0, max: 99, required: true })}
         ${field({ label: "MVP del partido", name: "mvpPlayerId", type: "select", value: match.mvpPlayerId || "", options: mvpOptions, full: true })}
+        ${field({ label: "Ganador de tanda de penaltis (solo si hay empate)", name: "penaltyWinnerTeamId", type: "select", value: match.penaltyWinnerTeamId || "", options: [{ value: "", label: "No aplica / seleccionar si empatan" }, { value: home.id, label: home.name }, { value: away.id, label: away.name }], full: true })}
         ${field({ label: "Notas del partido", name: "notes", type: "textarea", value: match.notes || "", full: true, rows: 3, placeholder: "Resumen, incidencias o cartas usadas." })}
       </div>
+      <h4 style="margin-top:20px">Goles especiales</h4>
+      <p class="modal-copy" style="margin-bottom:10px">Estos goles también forman parte del marcador total. El gol x2 suma dos tantos; el penal del presidente suma uno.</p>
+      <div class="form-grid">
+        ${field({ label: `${home.name} · Gol x2 (cantidad)`, name: "homeDoubleGoals", type: "number", value: special.home?.double ?? specialCount(home.id, "goal_x2"), min: 0, max: 20 })}
+        ${field({ label: `${away.name} · Gol x2 (cantidad)`, name: "awayDoubleGoals", type: "number", value: special.away?.double ?? specialCount(away.id, "goal_x2"), min: 0, max: 20 })}
+        ${field({ label: `${home.name} · Penal presidente (cantidad)`, name: "homePresidentPenaltyGoals", type: "number", value: special.home?.presidentPenalty ?? specialCount(home.id, "president_penalty"), min: 0, max: 20 })}
+        ${field({ label: `${away.name} · Penal presidente (cantidad)`, name: "awayPresidentPenaltyGoals", type: "number", value: special.away?.presidentPenalty ?? specialCount(away.id, "president_penalty"), min: 0, max: 20 })}
+      </div>
       <h4 style="margin-top:20px">Ficha por jugador</h4>
-      <p class="modal-copy" style="margin-bottom:10px">Marca minutos, goles, portería a cero, tarjetas y calificación (1–10). Vacío = no jugó.</p>
+      <p class="modal-copy" style="margin-bottom:10px">Marca minutos, goles normales, portería a cero, tarjetas y calificación (1–10). Los goles especiales se registran arriba. Vacío = no jugó.</p>
       <div class="table-wrap">
         <table class="table table--dense table--no-hover">
           <thead><tr><th>Jugador</th><th>Min.</th><th>Goles</th><th>P. a 0</th><th>Am.</th><th>Roja</th><th>Nota</th></tr></thead>

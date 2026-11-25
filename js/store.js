@@ -908,9 +908,9 @@ class Store {
     let awayReward = 0;
     if (homeScore > awayScore) {
       homeReward = 50;
-      awayReward = -10;
+      awayReward = 10;
     } else if (homeScore < awayScore) {
-      homeReward = -10;
+      homeReward = 10;
       awayReward = 50;
     } else {
       const penaltyWinner = payload.penaltyWinnerTeamId;

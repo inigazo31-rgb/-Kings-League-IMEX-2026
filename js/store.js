@@ -857,6 +857,9 @@ class Store {
     const home = this.team(match.homeTeamId);
     const away = this.team(match.awayTeamId);
     if (!home || !away) return { ok: false, message: "El partido no tiene ambos equipos asignados." };
+    if (homeScore === awayScore && ![home.id, away.id].includes(payload.penaltyWinnerTeamId)) {
+      return { ok: false, message: "En caso de empate, selecciona al ganador de la tanda de penaltis." };
+    }
     const prepared = this.preparePlayerStats(payload.playerStats, match, homeScore, awayScore);
     if (!prepared.ok) return prepared;
     const stats = prepared.stats;
@@ -872,6 +875,7 @@ class Store {
     match.homeScore = homeScore;
     match.awayScore = awayScore;
     match.mvpPlayerId = payload.mvpPlayerId || null;
+    match.penaltyWinnerTeamId = homeScore === awayScore ? payload.penaltyWinnerTeamId : null;
     match.specialGoals = {
       home: { double: Math.max(0, Number(payload.homeDoubleGoals) || 0), presidentPenalty: Math.max(0, Number(payload.homePresidentPenaltyGoals) || 0) },
       away: { double: Math.max(0, Number(payload.awayDoubleGoals) || 0), presidentPenalty: Math.max(0, Number(payload.awayPresidentPenaltyGoals) || 0) }
@@ -896,9 +900,6 @@ class Store {
       awayReward = this.state.league.winReward;
     } else {
       const penaltyWinner = payload.penaltyWinnerTeamId;
-      if (![home.id, away.id].includes(penaltyWinner)) {
-        return { ok: false, message: "En caso de empate, selecciona al ganador de la tanda de penaltis." };
-      }
       homeReward = penaltyWinner === home.id ? 35 : 15;
       awayReward = penaltyWinner === away.id ? 35 : 15;
     }

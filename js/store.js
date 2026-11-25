@@ -871,6 +871,11 @@ class Store {
     const prepared = this.preparePlayerStats(payload.playerStats, match, homeScore, awayScore);
     if (!prepared.ok) return prepared;
     const stats = prepared.stats;
+    const doubleGoalEvents = (match.refereeSession?.events || []).filter((event) => event.type === "goal_x2" && event.playerId);
+    for (const event of doubleGoalEvents) {
+      const stat = stats.find((item) => item.playerId === event.playerId);
+      if (stat) stat.goals += 1; // Cuenta como un gol individual, aunque valga dos en el marcador.
+    }
 
     if (match.settled && match.rewards) {
       home.balance -= Number(match.rewards.home) || 0;
@@ -892,7 +897,10 @@ class Store {
     match.status = "finished";
     match.settled = true;
     match.playerStats = stats;
-    const regularScorers = stats.flatMap((stat) => Array.from({ length: stat.goals }, () => ({ playerId: stat.playerId, teamId: stat.teamId, minute: null, type: "regular" })));
+    const regularScorers = stats.flatMap((stat) => {
+      const doubleCount = doubleGoalEvents.filter((event) => event.playerId === stat.playerId).length;
+      return Array.from({ length: Math.max(0, stat.goals - doubleCount) }, () => ({ playerId: stat.playerId, teamId: stat.teamId, minute: null, type: "regular" }));
+    });
     const specialScorers = (match.refereeSession?.events || [])
       .filter((event) => ["goal_x2", "president_penalty"].includes(event.type))
       .map((event) => ({ playerId: event.playerId || null, teamId: event.teamId, minute: event.minute ?? null, period: event.period ?? null, type: event.type, presidentName: event.presidentName || null }));

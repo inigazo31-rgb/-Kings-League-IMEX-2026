@@ -115,6 +115,7 @@ class Store {
     this.saving = false;
     this.saveTimer = 0;
     this.syncPromise = Promise.resolve();
+    this.remoteUpdatedAt = null;
     this.syncStatus = "disconnected";
   }
 
@@ -1539,6 +1540,9 @@ class Store {
       // La fila vacía inicial no debe reemplazar los datos locales de la liga.
       if (data?.payload && Object.keys(data.payload).length > 0) {
         this.state = this.normalize(data.payload);
+        this.remoteUpdatedAt = data.updated_at || null;
+      } else {
+        this.remoteUpdatedAt = null;
       }
 
       this.remoteReady = true;
@@ -1570,9 +1574,10 @@ class Store {
       }, (change) => {
         const remote = change.new?.payload;
         if (!remote || remote._clientId === this.clientId) return;
-        const remoteTime = new Date(remote.updatedAt || change.new?.updated_at || 0).getTime();
-        const localTime = new Date(this.state.updatedAt || 0).getTime();
+        const remoteTime = new Date(change.new?.updated_at || remote.updatedAt || 0).getTime();
+        const localTime = new Date(this.remoteUpdatedAt || 0).getTime();
         if (remoteTime > localTime) {
+          this.remoteUpdatedAt = change.new?.updated_at || null;
           this.state = this.normalize(remote);
           this.syncStatus = "connected";
           this.remoteError = "";
@@ -1597,6 +1602,8 @@ class Store {
   queueRemoteSave() {
     if (!this.supabase || !this.remoteReady) return;
     clearTimeout(this.saveTimer);
+    this.syncStatus = "saving";
+    this.notify();
     this.saveTimer = setTimeout(() => {
       this.syncPromise = this.syncPromise
         .then(() => this.persistRemote())
@@ -1610,21 +1617,60 @@ class Store {
 
   async persistRemote() {
     if (!this.supabase || !this.remoteReady) return false;
+    const leagueId = window.IMEX_CONFIG?.leagueId || "main";
     const payload = { ...this.state, accounts: [], _clientId: this.clientId };
-    const { error } = await this.supabase.from(SUPABASE_TABLE).upsert({
-      id: window.IMEX_CONFIG?.leagueId || "main",
-      payload,
-      updated_at: new Date().toISOString()
-    });
+    const nextUpdatedAt = new Date().toISOString();
+    let query;
+
+    // Compare-and-swap: solo guardar si la versión remota sigue siendo la que cargamos.
+    // Evita que dos dispositivos sobrescriban silenciosamente cambios simultáneos.
+    if (this.remoteUpdatedAt) {
+      query = this.supabase.from(SUPABASE_TABLE)
+        .update({ payload, updated_at: nextUpdatedAt })
+        .eq("id", leagueId)
+        .eq("updated_at", this.remoteUpdatedAt)
+        .select("updated_at")
+        .maybeSingle();
+    } else {
+      query = this.supabase.from(SUPABASE_TABLE)
+        .insert({ id: leagueId, payload, updated_at: nextUpdatedAt })
+        .select("updated_at")
+        .maybeSingle();
+    }
+
+    const { data, error } = await query;
     if (error) {
       this.remoteError = error.message || "No se pudo guardar en Supabase.";
       this.syncStatus = "error";
-      console.warn("Supabase save:", error.message);
+      console.warn("Supabase save:", this.remoteError);
       this.notify();
       return false;
     }
+
+    if (!data) {
+      // La fila cambió desde nuestra última lectura. Cargamos la versión vigente
+      // y avisamos: no se declara guardado un cambio que no llegó al servidor.
+      const latest = await this.supabase.from(SUPABASE_TABLE)
+        .select("payload, updated_at")
+        .eq("id", leagueId)
+        .maybeSingle();
+      if (latest.error) throw latest.error;
+      if (latest.data?.payload) {
+        this.remoteUpdatedAt = latest.data.updated_at || null;
+        this.state = this.normalize(latest.data.payload);
+        try { localStorage.setItem(STORAGE_KEY, JSON.stringify(this.state)); } catch { /* cache only */ }
+      }
+      this.remoteError = "Otro dispositivo guardó cambios al mismo tiempo. Se cargó la versión más reciente; revisa y vuelve a aplicar tu último cambio.";
+      this.syncStatus = "conflict";
+      toast(this.remoteError, "danger", "Conflicto de sincronización");
+      this.notify();
+      return false;
+    }
+
+    this.remoteUpdatedAt = data.updated_at || nextUpdatedAt;
     this.remoteError = "";
     this.syncStatus = "connected";
+    this.notify();
     return true;
   }
 

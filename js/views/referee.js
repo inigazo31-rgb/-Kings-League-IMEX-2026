@@ -207,7 +207,7 @@ function eventPicker(root, match, session, type) {
   const isChange = type === "substitution";
   modalRoot.innerHTML = `<div class="referee-modal-backdrop" data-event-backdrop><form class="referee-event-modal panel" data-event-form>
     <button class="referee-modal-close" type="button" data-event-cancel aria-label="Cerrar">×</button>
-    <p class="eyebrow">NUEVA INCIDENCIA</p><h2>${type === "goal" ? "Registrar gol" : isChange ? "Registrar cambio" : type === "yellow" ? "Tarjeta amarilla" : "Tarjeta roja"}</h2>
+    <p class="eyebrow">NUEVA INCIDENCIA</p><h2>${type === "goal" ? "Registrar gol" : type === "goal_x2" ? "Registrar gol x2" : isPresidentPenalty ? "Gol de penal del presidente" : isChange ? "Registrar cambio" : type === "yellow" ? "Tarjeta amarilla" : "Tarjeta roja"}</h2>
     <label class="field"><span>Equipo</span><select name="teamId" required><option value="">Seleccionar equipo</option>${teamOptions.map((t) => `<option value="${esc(t.id)}">${esc(t.name)}</option>`).join("")}</select></label>
     ${isChange ? `<label class="field"><span>Jugador que sale</span><select name="playerOutId" required disabled><option value="">Selecciona equipo primero</option></select></label><label class="field"><span>Jugador que entra</span><select name="playerInId" required disabled><option value="">Selecciona equipo primero</option></select></label>` : type === "president_penalty" ? `<label class="field"><span>Nombre del presidente</span><input name="presidentName" maxlength="80" placeholder="Nombre del presidente" required></label>` : `<label class="field"><span>Jugador</span><select name="playerId" required disabled><option value="">Selecciona equipo primero</option></select></label>`}
     <div class="referee-modal-actions"><button class="btn btn--ghost" type="button" data-event-cancel>Cancelar</button><button class="btn btn--primary" type="submit">Registrar</button></div>
@@ -221,7 +221,7 @@ function eventPicker(root, match, session, type) {
       out.innerHTML = '<option value="">Seleccionar jugador en cancha</option>' + optionsFor(teamSelect.value, "out");
       incoming.innerHTML = '<option value="">Seleccionar suplente</option>' + optionsFor(teamSelect.value, "in");
       out.disabled = incoming.disabled = !teamSelect.value;
-    } else {
+    } else if (!isPresidentPenalty) {
       const player = form.elements.playerId;
       player.innerHTML = '<option value="">Seleccionar jugador</option>' + optionsFor(teamSelect.value, "active");
       player.disabled = !teamSelect.value;

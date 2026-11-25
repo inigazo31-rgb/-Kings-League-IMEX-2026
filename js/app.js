@@ -76,7 +76,9 @@ function resolve(path) {
 
 function syncState() {
   const config = store.getSupabaseConfig();
-  if (store.remoteError || store.syncStatus === "error") return { label: "Error de sync", live: false };
+  if (store.syncStatus === "conflict") return { label: "Conflicto: revisa cambios", live: false };
+  if (store.syncStatus === "error" || store.remoteError) return { label: "Error de sync", live: false };
+  if (store.syncStatus === "saving") return { label: "Guardando…", live: false };
   if (store.remoteReady) return { label: "En vivo", live: true };
   if (config.url) return { label: "Conectando", live: false };
   return { label: "Local", live: false };

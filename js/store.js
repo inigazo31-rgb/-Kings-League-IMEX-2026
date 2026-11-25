@@ -979,6 +979,17 @@ class Store {
     return { ok: true, message: "Partido cancelado." };
   }
 
+  teamTransferMovements(teamId) {
+    return this.state.transfers.filter((item) =>
+      ["accepted", "completed"].includes(item.status) &&
+      (item.buyerTeamId === teamId || item.sellerTeamId === teamId)
+    ).length;
+  }
+
+  hasTransferCapacity(teamId) {
+    return this.teamTransferMovements(teamId) < 4;
+  }
+
   executeClausulazo(playerId, buyerTeamId) {
     const player = this.player(playerId);
     const buyer = this.team(buyerTeamId);
@@ -987,6 +998,7 @@ class Store {
     if (this.user?.role !== "ADMIN" && buyerTeamId !== this.user?.teamId) return { ok: false, message: "Solo el presidente del club puede ejecutar el clausulazo." };
     if (player.teamId === buyerTeamId) return { ok: false, message: "Ese jugador ya pertenece a tu club." };
     if (player.insignia) return { ok: false, message: "Los jugadores insignia están blindados." };
+    if (!this.hasTransferCapacity(buyer.id) || !this.hasTransferCapacity(player.teamId)) return { ok: false, message: "Uno de los clubes ya alcanzó sus cuatro movimientos de la fase de grupos." };
     if (buyer.clausulazoUsed) return { ok: false, message: "Tu club ya utilizó su clausulazo en este mercado." };
     if (Number(buyer.balance) < Number(player.value)) return { ok: false, message: "Saldo insuficiente para pagar la cláusula." };
     const seller = this.team(player.teamId);
@@ -1027,7 +1039,12 @@ class Store {
     if (player.insignia) return { ok: false, message: "Los jugadores insignia no entran en negociaciones." };
     if (!this.isMarketOpen()) return { ok: false, message: "El mercado está cerrado." };
     const amount = Number(price) || 0;
-    if (amount > Number(buyer.balance)) return { ok: false, message: "La oferta supera el saldo disponible." };
+    const offered = offeredPlayerIds.filter(Boolean).map((id) => this.player(id));
+    if (offered.some((item) => !item || item.teamId !== buyer.id || item.insignia)) return { ok: false, message: "Solo puedes ofrecer jugadores propios que no sean insignia." };
+    if (!this.hasTransferCapacity(buyer.id) || !this.hasTransferCapacity(seller.id)) return { ok: false, message: "Uno de los clubes ya alcanzó sus cuatro movimientos de la fase de grupos." };
+    const offeredValue = offered.reduce((sum, item) => sum + Number(item.value || 0), 0);
+    if (Math.round(offeredValue + amount) !== Math.round(Number(player.value))) return { ok: false, message: "La oferta debe equivaler exactamente al valor del jugador (efectivo + jugadores ofrecidos)." };
+    if (amount < 0 || amount > Number(buyer.balance)) return { ok: false, message: "Revisa el efectivo: no puede ser negativo ni superar tu saldo." };
     const transfer = {
       id: uid("tr"),
       buyerTeamId,
@@ -1063,6 +1080,7 @@ class Store {
       this.save("offer-reject");
       return { ok: true, message: "Oferta rechazada." };
     }
+    if (!this.hasTransferCapacity(buyer.id) || !this.hasTransferCapacity(seller.id)) return { ok: false, message: "Uno de los clubes ya alcanzó sus cuatro movimientos de la fase de grupos." };
     if (Number(buyer.balance) < Number(transfer.price)) return { ok: false, message: "El comprador ya no tiene saldo suficiente." };
     buyer.balance -= Number(transfer.price) || 0;
     seller.balance += Number(transfer.price) || 0;

@@ -883,7 +883,11 @@ class Store {
     match.status = "finished";
     match.settled = true;
     match.playerStats = stats;
-    match.scorers = stats.flatMap((stat) => Array.from({ length: stat.goals }, () => ({ playerId: stat.playerId, teamId: stat.teamId, minute: null, type: "regular" })));
+    const regularScorers = stats.flatMap((stat) => Array.from({ length: stat.goals }, () => ({ playerId: stat.playerId, teamId: stat.teamId, minute: null, type: "regular" })));
+    const specialScorers = (match.refereeSession?.events || [])
+      .filter((event) => ["goal_x2", "president_penalty"].includes(event.type))
+      .map((event) => ({ playerId: event.playerId || null, teamId: event.teamId, minute: event.minute ?? null, period: event.period ?? null, type: event.type, presidentName: event.presidentName || null }));
+    match.scorers = [...regularScorers, ...specialScorers];
     match.bookings = stats.flatMap((stat) => [
       ...Array.from({ length: stat.yellow }, () => ({ playerId: stat.playerId, teamId: stat.teamId, card: "yellow", minute: null })),
       ...Array.from({ length: stat.red }, () => ({ playerId: stat.playerId, teamId: stat.teamId, card: "red", minute: null }))
@@ -1114,7 +1118,6 @@ class Store {
 
   // Próximo cierre: miércoles a las 22:00, hora de México (UTC-6).
   marketCloseAt(now = new Date()) {
-    if (typeof this.state.league.marketOverride === "boolean" && this.state.league.marketClosesAt) return this.state.league.marketClosesAt;
     const mexicoTime = new Date(now.getTime() - 6 * 60 * 60 * 1000);
     const daysUntilWednesday = (3 - mexicoTime.getUTCDay() + 7) % 7;
     let close = new Date(Date.UTC(mexicoTime.getUTCFullYear(), mexicoTime.getUTCMonth(), mexicoTime.getUTCDate() + daysUntilWednesday, 22, 0, 0));

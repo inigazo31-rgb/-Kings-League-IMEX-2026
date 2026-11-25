@@ -1081,6 +1081,12 @@ class Store {
       return { ok: true, message: "Oferta rechazada." };
     }
     if (!this.hasTransferCapacity(buyer.id) || !this.hasTransferCapacity(seller.id)) return { ok: false, message: "Uno de los clubes ya alcanzó sus cuatro movimientos de la fase de grupos." };
+    const offered = (transfer.offeredPlayerIds || []).map((id) => this.player(id));
+    if (player.teamId !== seller.id || offered.some((item) => !item || item.teamId !== buyer.id || item.insignia)) {
+      return { ok: false, message: "La plantilla cambió desde que se envió la oferta. Cancela y crea una nueva propuesta." };
+    }
+    const equivalent = offered.reduce((sum, item) => sum + Number(item.value || 0), 0) + Number(transfer.price || 0);
+    if (Math.round(equivalent) !== Math.round(Number(player.value))) return { ok: false, message: "La equivalencia de la oferta cambió. Envía una nueva propuesta." };
     if (Number(buyer.balance) < Number(transfer.price)) return { ok: false, message: "El comprador ya no tiene saldo suficiente." };
     buyer.balance -= Number(transfer.price) || 0;
     seller.balance += Number(transfer.price) || 0;
@@ -1102,7 +1108,7 @@ class Store {
   // Mercado automático: miércoles de 00:00 a 21:59:59, hora de México (UTC-6).
   isMarketOpen(now = new Date()) {
     const override = this.state.league.marketOverride;
-    if (typeof override === "boolean") return override;
+    if (override === false) return false;
     const mexicoTime = new Date(now.getTime() - 6 * 60 * 60 * 1000);
     return mexicoTime.getUTCDay() === 3 && mexicoTime.getUTCHours() < 22;
   }

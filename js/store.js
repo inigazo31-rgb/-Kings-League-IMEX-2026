@@ -875,8 +875,8 @@ class Store {
     if (match.settled && match.rewards) {
       home.balance -= Number(match.rewards.home) || 0;
       away.balance -= Number(match.rewards.away) || 0;
-      this.addFinance(home.id, "expense", "Reversión de resultado anterior", match.rewards.home || 0);
-      this.addFinance(away.id, "expense", "Reversión de resultado anterior", match.rewards.away || 0);
+      this.addFinance(home.id, Number(match.rewards.home) >= 0 ? "expense" : "income", "Reversión de resultado anterior", Math.abs(Number(match.rewards.home) || 0));
+      this.addFinance(away.id, Number(match.rewards.away) >= 0 ? "expense" : "income", "Reversión de resultado anterior", Math.abs(Number(match.rewards.away) || 0));
     }
 
     if (match.playerStats?.length) this.applyPlayerStats(match.playerStats, -1);

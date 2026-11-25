@@ -98,10 +98,17 @@ function openOffer(player) {
       const form = root.querySelector("[data-offer-form]");
       const buyerSelect = form.querySelector("select[name=\"buyerTeamId\"]");
       const swapSelect = form.querySelector('select[name="offeredPlayerId"]');
+      const priceInput = form.querySelector('[name="price"]');
+      const updateEquivalentCash = () => {
+        const offeredPlayer = store.player(swapSelect?.value);
+        if (priceInput) priceInput.value = Math.max(0, Number(player.value) - Number(offeredPlayer?.value || 0));
+      };
       buyerSelect?.addEventListener("change", () => {
         const squad = store.teamPlayers(buyerSelect.value).filter((item) => !item.insignia && item.id !== player.id);
         swapSelect.innerHTML = `<option value="">Sin intercambio</option>${squad.map((item) => `<option value="${esc(item.id)}">${esc(item.name)} · ${money(item.value)}</option>`).join("")}`;
+        updateEquivalentCash();
       });
+      swapSelect?.addEventListener("change", updateEquivalentCash);
       form.addEventListener("submit", (event) => {
         event.preventDefault();
         const values = formValues(form);

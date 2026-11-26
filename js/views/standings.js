@@ -100,7 +100,8 @@ export default {
           <div class="panel__head"><div><h3>Puntos</h3><p>Criterios de clasificación</p></div></div>
           <div class="detail-list">
             <div class="detail-list__row"><span>Victoria</span><strong>3 puntos</strong></div>
-            <div class="detail-list__row"><span>Empate</span><strong>1 punto</strong></div>
+            <div class="detail-list__row"><span>Empate · gana penales</span><strong>2 puntos</strong></div>
+            <div class="detail-list__row"><span>Empate · pierde penales</span><strong>1 punto</strong></div>
             <div class="detail-list__row"><span>Derrota</span><strong>0 puntos</strong></div>
             <div class="detail-list__row"><span>Desempate</span><strong>DG · GF · H2H</strong></div>
           </div>

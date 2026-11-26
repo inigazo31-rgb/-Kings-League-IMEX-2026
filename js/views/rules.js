@@ -68,7 +68,7 @@ export default {
             <div class="detail-list__row"><span>Clasificación</span><strong>Los 2 primeros de cada grupo</strong></div>
             <div class="detail-list__row"><span>Semifinales</span><strong>1.º A vs 2.º B · 1.º B vs 2.º A</strong></div>
             <div class="detail-list__row"><span>Final</span><strong>Partido único</strong></div>
-            <div class="detail-list__row"><span>Puntos</span><strong>Victoria 3 · Empate 1 · Derrota 0</strong></div>
+            <div class="detail-list__row"><span>Puntos</span><strong>Victoria 3 · Empate: ganador de penales 2, perdedor 1 · Derrota 0</strong></div>
             <div class="detail-list__row"><span>Desempate</span><strong>Diferencia de goles · Goles a favor</strong></div>
           </div>
         </section>

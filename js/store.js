@@ -336,8 +336,18 @@ class Store {
       } else {
         home.drawn += 1;
         away.drawn += 1;
-        home.points += 1;
-        away.points += 1;
+        const penaltyWinnerId = match.penaltyWinnerTeamId;
+        if (penaltyWinnerId === home.id) {
+          home.points += 2;
+          away.points += 1;
+        } else if (penaltyWinnerId === away.id) {
+          home.points += 1;
+          away.points += 2;
+        } else {
+          // Compatibilidad con empates antiguos sin ganador de tanda registrado.
+          home.points += 1;
+          away.points += 1;
+        }
         home.form.push("E");
         away.form.push("E");
       }
